@@ -1,0 +1,217 @@
+# Created by Jonas Rosland, @virtualswede & Matt Cowger, @mcowger
+# Many thanks to this post by James Carr: http://blog.james-carr.org/2013/03/17/dynamic-vagrant-nodes/
+# Extended by cebruns for CoprHD All-In-One Vagrant Setup
+
+
+########################################################
+#
+# Global Settings for ScaleIO, CoprHD, and DevStack
+#
+########################################################
+network = "192.168.100"
+domain = 'aio.local'
+
+########################################################
+#
+# DevStack Settings 
+#
+########################################################
+ds_node_ip = "#{network}.5"
+ds_vagrantbox = "ubuntu/trusty64"
+
+########################################################
+#
+# CoprHD Settings 
+#
+########################################################
+ch_node_ip = "#{network}.11"
+ch_virtual_ip = "#{network}.10"
+ch_gw_ip = "#{network}.1"
+ch_vagrantbox = "vchrisb/openSUSE-13.2_64"
+build = false
+
+########################################################
+#
+# ScaleIO Settings 
+#
+########################################################
+# ScaleIO vagrant box
+sio_vagrantbox="centos_6.5"
+
+# ScaleIO vagrant box url
+sio_vagrantboxurl="https://github.com/2creatives/vagrant-centos/releases/download/v6.5.3/centos65-x86_64-20140116.box"
+
+# scaleio admin password
+sio_password="Scaleio123"
+
+# add your nodes here
+sio_nodes = ['tb', 'mdm1', 'mdm2']
+
+clusterip = "#{network}.20"
+tbip = "#{network}.21"
+firstmdmip = "#{network}.22"
+secondmdmip = "#{network}.23"
+
+# Install ScaleIO cluster automatically or IM only
+clusterinstall = "True" #If True a fully working ScaleIO cluster is installed. False mean only IM is installed on node MDM1.
+
+# version of installation package
+version = "1.32-402.1"
+
+#OS Version of package
+os="el6"
+
+# installation folder
+siinstall = "/opt/scaleio/siinstall"
+
+# packages folder
+packages = "/opt/scaleio/siinstall/ECS/packages"
+# package name, was ecs for 1.21, is now EMC-ScaleIO from 1.30
+packagename = "EMC-ScaleIO"
+
+# fake device
+device = "/home/vagrant/scaleio1"
+
+# loop through the nodes and set hostname
+scaleio_nodes = []
+subnet=10
+sio_nodes.each { |node_name|
+  (1..1).each {|n|
+    subnet += 1
+    scaleio_nodes << {:hostname => "#{node_name}"}
+  }
+}
+
+Vagrant.configure("2") do |config|
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+  end
+  # try to enable caching to speed up package installation for second run
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :box
+  end
+  # ScaleIO Setup
+  scaleio_nodes.each do |node|
+    config.vm.define node[:hostname] do |node_config|
+      node_config.vm.box = "#{sio_vagrantbox}"
+      node_config.vm.box_url = "#{sio_vagrantboxurl}"
+      node_config.vm.host_name = "#{node[:hostname]}.#{domain}"
+      node_config.vm.provider :virtualbox do |vb|
+        vb.customize ["modifyvm", :id, "--memory", "1024"]
+      end
+      if node[:hostname] == "tb"
+        node_config.vm.network "private_network", ip: "#{tbip}"
+        node_config.vm.provision "shell" do |s|
+          s.path = "scripts/tb.sh"
+          s.args   = "-o #{os} -v #{version} -n #{packagename} -d #{device} -f #{firstmdmip} -s #{secondmdmip} -i #{siinstall} -c #{clusterinstall}"
+        end
+      end
+
+      if node[:hostname] == "mdm1"
+        node_config.vm.network "private_network", ip: "#{firstmdmip}"
+        node_config.vm.network "forwarded_port", guest: 6611, host: 6611
+        node_config.vm.provision "shell" do |s|
+          s.path = "scripts/mdm1.sh"
+          s.args   = "-o #{os} -v #{version} -n #{packagename} -d #{device} -f #{firstmdmip} -s #{secondmdmip} -i #{siinstall} -p #{sio_password} -c #{clusterinstall}"
+        end
+      end
+
+      if node[:hostname] == "mdm2"
+        node_config.vm.network "private_network", ip: "#{secondmdmip}"
+        node_config.vm.provision "shell" do |s|
+          s.path = "scripts/mdm2.sh"
+          s.args   = "-o #{os} -v #{version} -n #{packagename} -d #{device} -f #{firstmdmip} -s #{secondmdmip} -i #{siinstall} -t #{tbip} -p #{sio_password} -c #{clusterinstall}"
+        end
+      end
+    end
+  end
+  
+  # CoprHD Setup
+  config.vm.define "coprhd" do |coprhd|
+     coprhd.vm.box = "#{ch_vagrantbox}"
+     coprhd.vm.host_name = "coprhd1.#{domain}"
+     coprhd.vm.network "private_network", ip: "#{ch_node_ip}"
+
+     # configure virtualbox provider
+     coprhd.vm.provider "virtualbox" do |v|
+         v.gui = false
+         v.name = "CoprHD"
+         v.memory = 3000
+         v.cpus = 4
+     end
+
+     # Setup Swap space
+     coprhd.vm.provision "swap", type: "shell" do |s|
+      s.path = "scripts/swap.sh"
+     end
+
+     # install necessary packages
+     coprhd.vm.provision "packages", type: "shell" do |s|
+      s.path = "scripts/packages.sh"
+      s.args   = "--build #{build}"
+     end
+   
+     # download, patch and build nginx
+     coprhd.vm.provision "nginx", type: "shell", path: "scripts/nginx.sh"
+   
+     # create CoprHD configuration file
+     coprhd.vm.provision "config", type: "shell" do |s|
+      s.path = "scripts/config.sh"
+      s.args   = "--node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1"
+     end
+   
+     # download and compile CoprHD from sources
+     coprhd.vm.provision "build", type: "shell" do |s|
+      s.path = "scripts/build.sh"
+      s.args   = "--build #{build}"
+     end
+   
+     # install CoprHD RPM
+     coprhd.vm.provision "install", type: "shell" do |s|
+      s.path = "scripts/install.sh"
+      s.args   = "--virtual_ip #{ch_virtual_ip}"
+     end
+  end
+
+  # DevStack Setup
+  config.vm.define "devstack" do |devstack|
+     devstack.vm.box = "#{ds_vagrantbox}"
+     devstack.vm.host_name = "devstack.#{domain}"
+     devstack.vm.network "private_network", ip: "#{ds_node_ip}"
+
+     # configure virtualbox provider
+     devstack.vm.provider "virtualbox" do |v|
+         v.gui = false
+         v.name = "devstack"
+         v.memory = 3500
+         v.cpus = 2
+     end
+
+     # Setup Swap space
+     devstack.vm.provision "swap", type: "shell" do |s|
+      s.path = "scripts/swap.sh"
+     end
+
+     # Update Ubuntu and Install Pre-reqs
+     devstack.vm.provision "shell", privileged: false, inline: <<-SHELL
+      sudo apt-get update
+      sudo apt-get -y upgrade
+      sudo apt-get -y install git ntp libsqlite3-dev
+  
+      # Get Devstack and checkout kilo branch
+      git clone https://git.openstack.org/openstack-dev/devstack
+      cd devstack
+      git checkout -b stable/kilo origin/stable/kilo
+    SHELL
+
+     # Setup /home/vagrant/devstack/local.conf
+     devstack.vm.provision "local_conf", type: "shell" do |s|
+      s.path = "scripts/local_conf.sh"
+      s.args = "--ip #{ds_node_ip}"
+     end
+
+     # START DEVSTACK on "up" or "reload"
+     devstack.vm.provision "shell", privileged: false, run: "always" do |s|
+       s.inline = "cd ~vagrant/devstack; ./stack.sh"
+     end
+  end
+end
