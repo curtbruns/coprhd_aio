@@ -125,53 +125,6 @@ Vagrant.configure("2") do |config|
     end
   end
   
-  # CoprHD Setup
-  config.vm.define "coprhd" do |coprhd|
-     coprhd.vm.box = "#{ch_vagrantbox}"
-     coprhd.vm.host_name = "coprhd1.#{domain}"
-     coprhd.vm.network "private_network", ip: "#{ch_node_ip}"
-
-     # configure virtualbox provider
-     coprhd.vm.provider "virtualbox" do |v|
-         v.gui = false
-         v.name = "CoprHD"
-         v.memory = 3000
-         v.cpus = 4
-     end
-
-     # Setup Swap space
-     coprhd.vm.provision "swap", type: "shell" do |s|
-      s.path = "scripts/swap.sh"
-     end
-
-     # install necessary packages
-     coprhd.vm.provision "packages", type: "shell" do |s|
-      s.path = "scripts/packages.sh"
-      s.args   = "--build #{build}"
-     end
-   
-     # download, patch and build nginx
-     coprhd.vm.provision "nginx", type: "shell", path: "scripts/nginx.sh"
-   
-     # create CoprHD configuration file
-     coprhd.vm.provision "config", type: "shell" do |s|
-      s.path = "scripts/config.sh"
-      s.args   = "--node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1"
-     end
-   
-     # download and compile CoprHD from sources
-     coprhd.vm.provision "build", type: "shell" do |s|
-      s.path = "scripts/build.sh"
-      s.args   = "--build #{build}"
-     end
-   
-     # install CoprHD RPM
-     coprhd.vm.provision "install", type: "shell" do |s|
-      s.path = "scripts/install.sh"
-      s.args   = "--virtual_ip #{ch_virtual_ip}"
-     end
-  end
-
   # DevStack Setup
   config.vm.define "devstack" do |devstack|
      devstack.vm.box = "#{ds_vagrantbox}"
@@ -212,6 +165,53 @@ Vagrant.configure("2") do |config|
      # START DEVSTACK on "up" or "reload"
      devstack.vm.provision "shell", privileged: false, run: "always" do |s|
        s.inline = "cd ~vagrant/devstack; ./stack.sh"
+     end
+  end
+
+  # CoprHD Setup
+  config.vm.define "coprhd" do |coprhd|
+     coprhd.vm.box = "#{ch_vagrantbox}"
+     coprhd.vm.host_name = "coprhd1.#{domain}"
+     coprhd.vm.network "private_network", ip: "#{ch_node_ip}"
+
+     # configure virtualbox provider
+     coprhd.vm.provider "virtualbox" do |v|
+         v.gui = false
+         v.name = "CoprHD"
+         v.memory = 3000
+         v.cpus = 4
+     end
+
+     # Setup Swap space
+     coprhd.vm.provision "swap", type: "shell" do |s|
+      s.path = "scripts/swap.sh"
+     end
+
+     # install necessary packages
+     coprhd.vm.provision "packages", type: "shell" do |s|
+      s.path = "scripts/packages.sh"
+      s.args   = "--build #{build}"
+     end
+
+     # download, patch and build nginx
+     coprhd.vm.provision "nginx", type: "shell", path: "scripts/nginx.sh"
+
+     # create CoprHD configuration file
+     coprhd.vm.provision "config", type: "shell" do |s|
+      s.path = "scripts/config.sh"
+      s.args   = "--node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1"
+     end
+
+     # download and compile CoprHD from sources
+     coprhd.vm.provision "build", type: "shell" do |s|
+      s.path = "scripts/build.sh"
+      s.args   = "--build #{build}"
+     end
+
+     # install CoprHD RPM
+     coprhd.vm.provision "install", type: "shell" do |s|
+      s.path = "scripts/install.sh"
+      s.args   = "--virtual_ip #{ch_virtual_ip}"
      end
   end
 end
