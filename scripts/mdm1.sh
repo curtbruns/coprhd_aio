@@ -58,6 +58,7 @@ echo CLUSTERINSTALL     = "${CLUSTERINSTALL}"
 truncate -s 100GB ${DEVICE}
 yum install numactl libaio -y
 yum install java-1.7.0-openjdk -y
+yum install ntpdate -y
 
 # Always install ScaleIO IM
 cd /vagrant/scaleio/ScaleIO_1.32_Gateway_for_Linux_Download
