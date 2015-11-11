@@ -98,11 +98,16 @@ Vagrant.configure("2") do |config|
       node_config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--memory", "1024"]
       end
+
       if node[:hostname] == "tb"
         node_config.vm.network "private_network", ip: "#{tbip}"
         node_config.vm.provision "shell" do |s|
           s.path = "scripts/tb.sh"
           s.args   = "-o #{os} -v #{version} -n #{packagename} -d #{device} -f #{firstmdmip} -s #{secondmdmip} -i #{siinstall} -c #{clusterinstall}"
+        end
+        # Setup ntpdate crontab
+        node_config.vm.provision "shell" do |s|
+          s.path = "scripts/crontab.sh"
         end
       end
 
@@ -113,6 +118,10 @@ Vagrant.configure("2") do |config|
           s.path = "scripts/mdm1.sh"
           s.args   = "-o #{os} -v #{version} -n #{packagename} -d #{device} -f #{firstmdmip} -s #{secondmdmip} -i #{siinstall} -p #{sio_password} -c #{clusterinstall}"
         end
+        # Setup ntpdate crontab
+        node_config.vm.provision "shell" do |s|
+          s.path = "scripts/crontab.sh"
+        end
       end
 
       if node[:hostname] == "mdm2"
@@ -120,6 +129,10 @@ Vagrant.configure("2") do |config|
         node_config.vm.provision "shell" do |s|
           s.path = "scripts/mdm2.sh"
           s.args   = "-o #{os} -v #{version} -n #{packagename} -d #{device} -f #{firstmdmip} -s #{secondmdmip} -i #{siinstall} -t #{tbip} -p #{sio_password} -c #{clusterinstall}"
+        end
+        # Setup ntpdate crontab
+        node_config.vm.provision "shell" do |s|
+          s.path = "scripts/crontab.sh"
         end
       end
     end
@@ -156,16 +169,21 @@ Vagrant.configure("2") do |config|
       git checkout -b stable/kilo origin/stable/kilo
     SHELL
 
-     # Setup /home/vagrant/devstack/local.conf
-     devstack.vm.provision "local_conf", type: "shell" do |s|
-      s.path = "scripts/local_conf.sh"
-      s.args = "--ip #{ds_node_ip}"
-     end
+      # Setup ntpdate crontab
+      devstack.vm.provision "shell" do |s|
+        s.path = "scripts/crontab.sh"
+      end
 
-     # START DEVSTACK on "up" or "reload"
-     devstack.vm.provision "shell", privileged: false, run: "always" do |s|
-       s.inline = "cd ~vagrant/devstack; ./stack.sh"
-     end
+      # Setup /home/vagrant/devstack/local.conf
+      devstack.vm.provision "local_conf", type: "shell" do |s|
+       s.path = "scripts/local_conf.sh"
+       s.args = "--ip #{ds_node_ip}"
+      end
+
+      # START DEVSTACK on "up" or "reload"
+      devstack.vm.provision "shell", privileged: false, run: "always" do |s|
+        s.inline = "cd ~vagrant/devstack; ./stack.sh"
+      end
   end
 
   # CoprHD Setup
@@ -207,6 +225,12 @@ Vagrant.configure("2") do |config|
       s.path = "scripts/build.sh"
       s.args   = "--build #{build}"
      end
+
+      # Setup ntpdate crontab
+      coprhd.vm.provision "shell" do |s|
+        s.path = "scripts/crontab.sh"
+        s.privileged = false
+      end
 
      # install CoprHD RPM
      coprhd.vm.provision "install", type: "shell" do |s|

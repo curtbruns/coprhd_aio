@@ -64,6 +64,8 @@ echo CLUSTERINSTALL   =  "${CLUSTERINSTALL}"
 #echo "Number files in SEARCH PATH with EXTENSION:" $(ls -1 "${SEARCHPATH}"/*."${EXTENSION}" | wc -l)
 truncate -s 100GB ${DEVICE}
 yum install numactl libaio -y
+yum install ntpdate -y
+
 cd /vagrant/scaleio/ScaleIO_1.32_RHEL6_Download
 
 if [ "${CLUSTERINSTALL}" == "True" ]; then
