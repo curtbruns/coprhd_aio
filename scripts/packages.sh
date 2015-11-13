@@ -68,3 +68,6 @@ else
   zypper -n install -r suse-13.2-seife sipcalc
   zypper modifyrepo -d suse-13.2-seife
 fi
+
+# Install pip
+zypper -n install python-pip

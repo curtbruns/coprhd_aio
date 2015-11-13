@@ -2,9 +2,11 @@
 
 #install nginx
 cd /tmp
+echo "Getting Archives"
 wget 'http://nginx.org/download/nginx-1.6.2.tar.gz'
 wget 'https://github.com/yaoweibin/nginx_upstream_check_module/archive/v0.3.0.tar.gz'
 wget 'https://github.com/openresty/headers-more-nginx-module/archive/v0.25.tar.gz'
+echo "Uncompressing"
 tar -xzvf nginx-1.6.2.tar.gz
 tar -xzvf v0.3.0.tar.gz
 tar -xzvf v0.25.tar.gz

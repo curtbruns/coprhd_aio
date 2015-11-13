@@ -28,7 +28,7 @@ ch_node_ip = "#{network}.11"
 ch_virtual_ip = "#{network}.10"
 ch_gw_ip = "#{network}.1"
 ch_vagrantbox = "vchrisb/openSUSE-13.2_64"
-build = false
+build = true
 
 ########################################################
 #
@@ -227,7 +227,7 @@ Vagrant.configure("2") do |config|
      end
 
       # Setup ntpdate crontab
-      coprhd.vm.provision "shell" do |s|
+      coprhd.vm.provision "crontab", type: "shell" do |s|
         s.path = "scripts/crontab.sh"
         s.privileged = false
       end
@@ -236,6 +236,11 @@ Vagrant.configure("2") do |config|
      coprhd.vm.provision "install", type: "shell" do |s|
       s.path = "scripts/install.sh"
       s.args   = "--virtual_ip #{ch_virtual_ip}"
+     end
+
+     # Grab CoprHD CLI Scripts and Patch Auth Module
+     coprhd.vm.provision "coprhd_cli", type: "shell" do |s|
+      s.path = "scripts/coprd_cli.sh"
      end
   end
 end
