@@ -40,11 +40,15 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 * coprhd_cli_scripts are cloned in /opt/storageos/coprhd_cli_scripts
 
 ## CoprHD CLI Scripts Usage
+* SSH into CoprHD as the storageos user:
+  * `vagrant ssh coprhd -- -l storageos`  # P: vagrant
+* Go to coprhd_cli_scripts dir:
+  * `cd /opt/storageos/coprhd_cli_scripts`
 * Make sure coprhd_settings matches your environment
 * Source the coprhd_settings file
-* Check coprhd seteup:
+* Check coprhd setup:
   * `./coprhd -c` 
-* Register Keystone as Auth provider, Setup ScaleIO as Storage Provider, Create VPool, VArray, Project, Tenant, and update Devstack to use CoprHD as Volume Service:
+* Register Keystone as Auth provider, Setup ScaleIO as Storage Provider, Create VPool, VArray, Project, Tenant, and update Devstack to use CoprHD as Volume V2 Service (Cinder):
   * `./coprhd -s`
 * Delete all traces of CoprHD setup (remove Auth provider, VPool, Varray, Project, Tenant)
   * `./coprhd -d`
