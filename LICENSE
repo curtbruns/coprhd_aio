@@ -3,8 +3,9 @@ The MIT License (MIT)
 CoprHD Provisioning and Scripts provided by:
 Copyright (c) 2015 Christopher Banck
 
-ScaleIO Provisioning and Scripts provided by:
+ScaleIO Provisioning and Scripts (mdm1.sh, mdm2.sh, tb.sh) provided by:
 https://github.com/jonasrosland/vagrant-scaleio
+Vagrantfile was based off of Jonas' original work as well.
 
 DevStack and combining all to single Vagrant Environment provided by:
 Curt Bruns https://github.com/curtbruns
