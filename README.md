@@ -33,6 +33,7 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 * CoprHD source code is in: /tmp/coprhd-controller/
 * Checked out branch is: feature-block-service-cinderapi
 * Make changes and recompile:
+<<<<<<< HEAD
   * `sudo make clobber BUILD_TYPE=oss rpm`
 
 # CoprHD Cli Scripts
@@ -49,3 +50,21 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
   * `Note: This doesn't revert the Keystone Endpoint back to Using Cinder as VolumeV2 service`
 * `Partial Setup (Only Add ScaleIO as backend with Varray/Vpool and Project setup - no Devstack/Keystone changes or Auth provider added)`
   * `./coprhd -p`
+=======
+  * sudo make clobber BUILD_TYPE=oss rpm
+
+# CoprHD Cli Scripts
+* coprhd_cli_scripts are in /opt/storageos/coprhd_cli_scripts
+##Execution Flow
+* Make sure coprhd_settings matches your environment
+* Source the coprhd_settings file
+* Check coprhd seteup:
+  * ./coprhd -c 
+* Register Keystone as Auth provider, Setup ScaleIO as Storage Provider, Create VPool, VArray, Project, Tenant, and update Devstack to use CoprHD as Volume Service:
+  * ./coprhd -s
+* Delete all traces of CoprHD setup (remove Auth provider, VPool, Varray, Project, Tenant)
+  * ./coprhd -d
+  * Note: This doesn't revert the Keystone Endpoint back to Using Cinder as VolumeV2 service
+* Partial Setup (Only Add ScaleIO as backend with Varray/Vpool and Project setup - no Devstack/Keystone changes or Auth provider added)
+  * ./coprhd -p
+>>>>>>> fa005c343fb602c961f120b232608d4bfffae3d5
