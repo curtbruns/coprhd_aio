@@ -52,8 +52,12 @@ echo SECONDMDMIP    = "${SECONDMDMIP}"
 echo CLUSTERINSTALL = "${CLUSTERINSTALL}"
 #echo "Number files in SEARCH PATH with EXTENSION:" $(ls -1 "${SEARCHPATH}"/*."${EXTENSION}" | wc -l)
 truncate -s 100GB ${DEVICE}
+yum update -v -y
 yum install numactl libaio wget -y
 yum install ntpdate -y
+chkconfig iptables off
+chkconfig ip6tables off
+
 cd /vagrant
 wget -nv ftp://ftp.emc.com/Downloads/ScaleIO/ScaleIO_RHEL6_Download.zip -O ScaleIO_RHEL6_Download.zip
 unzip -o ScaleIO_RHEL6_Download.zip -d /vagrant/scaleio/

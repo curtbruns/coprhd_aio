@@ -56,9 +56,12 @@ echo SECONDMDMIP    = "${SECONDMDMIP}"
 echo CLUSTERINSTALL     = "${CLUSTERINSTALL}"
 #echo "Number files in SEARCH PATH with EXTENSION:" $(ls -1 "${SEARCHPATH}"/*."${EXTENSION}" | wc -l)
 truncate -s 100GB ${DEVICE}
+yum update -v -y
 yum install numactl libaio -y
 yum install java-1.7.0-openjdk -y
 yum install ntpdate -y
+chkconfig iptables off
+chkconfig ip6tables off
 
 # Always install ScaleIO IM
 cd /vagrant/scaleio/ScaleIO_1.32_Gateway_for_Linux_Download

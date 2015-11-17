@@ -63,11 +63,13 @@ echo PASSWORD    = "${PASSWORD}"
 echo CLUSTERINSTALL   =  "${CLUSTERINSTALL}"
 #echo "Number files in SEARCH PATH with EXTENSION:" $(ls -1 "${SEARCHPATH}"/*."${EXTENSION}" | wc -l)
 truncate -s 100GB ${DEVICE}
+yum update -v -y
 yum install numactl libaio -y
 yum install ntpdate -y
+chkconfig iptables off
+chkconfig ip6tables off
 
 cd /vagrant/scaleio/ScaleIO_1.32_RHEL6_Download
-
 if [ "${CLUSTERINSTALL}" == "True" ]; then
   rpm -Uv ${PACKAGENAME}-mdm-${VERSION}.${OS}.x86_64.rpm
   rpm -Uv ${PACKAGENAME}-sds-${VERSION}.${OS}.x86_64.rpm

@@ -240,7 +240,13 @@ Vagrant.configure("2") do |config|
 
      # Grab CoprHD CLI Scripts and Patch Auth Module
      coprhd.vm.provision "coprhd_cli", type: "shell" do |s|
-      s.path = "scripts/coprd_cli.sh"
+      s.path = "scripts/coprhd_cli.sh"
+      s.args = "-u http://#{ds_node_ip}:5000/v2.0 -p nomoresecrete"
      end
+
+    # When SSH-ing to CoprHD box - use storageos user
+    #coprhd.ssh.username = "storageos"
+    #coprhd.ssh.password = "vagrant"
+
   end
 end

@@ -35,6 +35,8 @@ done
 #add required users and groups
 groupadd storageos
 useradd -d /opt/storageos -g storageos storageos
+# Set storageos password to 'vagrant'
+usermod -p '$6$pOMXvTiV$WBEcdq2hG94zzarZOyOezVl33DkGD9P/Xx.W16gCFXC7t9W..p8onZLgomp7l/0IdoeyzltuyfwVMmCeqmr57.' storageos
 
 #create config file
 cat > /etc/ovfenv.properties << EOF
