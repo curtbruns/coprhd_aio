@@ -7,6 +7,8 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 
 # Prerequisites
 * vagrant
+  * Nice-to-have: vagrant-cachier for caching packages - really speeds up subsequent installs
+  * `vagrant plugin install vagrant-cachier`
 * virtualbox
 
 # Usage
