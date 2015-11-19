@@ -18,7 +18,8 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 * Launch only a subset of VM(s)
   * `vagrant up [VM]`
   * [VM] is one or more of: tb, mdm1, mdm2, coprhd, or devstack
-  * e.g. To launch only the ScaleIO Cluster: 'vagrant up mdm1 mdm2 tb'
+  * e.g. To launch only the ScaleIO Cluster: 'vagrant up tb mdm1 mdm2'
+  * NOTE: For ScaleIO Cluster provisioning on the first boot, you MUST have mdm2 the last in the list as it does all the cluster creation during provisioning and the other nodes must be urnning.
 
 # Access the VMs
 * `vagrant ssh [VM]`
