@@ -2,7 +2,6 @@
 # Many thanks to this post by James Carr: http://blog.james-carr.org/2013/03/17/dynamic-vagrant-nodes/
 # Extended by cebruns for CoprHD All-In-One Vagrant Setup
 
-
 ########################################################
 #
 # Global Settings for ScaleIO, CoprHD, and DevStack
@@ -74,10 +73,8 @@ device = "/home/vagrant/scaleio1"
 
 # loop through the nodes and set hostname
 scaleio_nodes = []
-subnet=10
 sio_nodes.each { |node_name|
   (1..1).each {|n|
-    subnet += 1
     scaleio_nodes << {:hostname => "#{node_name}"}
   }
 }
@@ -85,7 +82,7 @@ sio_nodes.each { |node_name|
 Vagrant.configure("2") do |config|
   if Vagrant.has_plugin?("vagrant-proxyconf")
   end
-  # try to enable caching to speed up package installation for second run
+  # Enable caching to speed up package installation for second run
   if Vagrant.has_plugin?("vagrant-cachier")
     config.cache.scope = :box
   end
