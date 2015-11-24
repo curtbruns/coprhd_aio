@@ -1,5 +1,7 @@
 #! /bin/bash
-
+#################################################
+# Install CoprHD CLI Scripts
+#################################################
 while [[ $# > 1 ]]
 do
   key="$1"
@@ -10,6 +12,10 @@ do
       ;;
     -u|--url)
       keystone_url="$2"
+      shift
+      ;;
+    -s|--simulator)
+      simulator="$2"
       shift
       ;;
     *)
@@ -72,3 +78,25 @@ description:Key1
 group_member_attributes:member,roleOccupant,memberUid",uniqueMember
 group_object_classes:posixGroup,organizationalRole,groupOfNames,groupOfUniqueNames
 EOF2
+
+# Grab the SMIS Simulator, if desired
+if [ "$simulator" = true ]; then
+  # Download to /vagrant directory if needed
+  if [ ! -e /vagrant/smis_simulator.zip ]; then
+     wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/smis-simulator.zip?version=2&modificationDate=1444855261258&api=v2' -O /vagrant/smis_simulator.zip
+  fi
+  unzip /vagrant/smis_simulator.zip -d /opt/storageos/
+  cd /opt/storageos/ecom/bin
+  chmod +x  ECOM
+  chmod +x  system/ECOM
+  ./ECOM &
+  INTERVAL=5
+  COUNT=0
+  echo "Checking for ECOM Service Starting...."
+  while [ $COUNT -lt 4 ];
+  do
+    COUNT="$(netstat -anp  | grep -c ECOM)"
+    printf "."
+    sleep $INTERVAL
+  done
+fi

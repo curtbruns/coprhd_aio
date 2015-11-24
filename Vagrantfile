@@ -16,6 +16,8 @@ domain = 'aio.local'
 #
 ########################################################
 ds_node_ip = "#{network}.5"
+ds_flat_if = "eth1"
+ds_range   = "#{network}.224/28"
 ds_vagrantbox = "ubuntu/trusty64"
 
 ########################################################
@@ -28,6 +30,7 @@ ch_virtual_ip = "#{network}.10"
 ch_gw_ip = "#{network}.1"
 ch_vagrantbox = "vchrisb/openSUSE-13.2_64"
 build = true
+smis_simulator = false
 
 ########################################################
 #
@@ -94,6 +97,7 @@ Vagrant.configure("2") do |config|
       node_config.vm.host_name = "#{node[:hostname]}.#{domain}"
       node_config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--memory", "1024"]
+        vb.customize ["modifyvm", :id, "--name", node[:hostname]]
       end
 
       if node[:hostname] == "tb"
@@ -174,7 +178,7 @@ Vagrant.configure("2") do |config|
       # Setup /home/vagrant/devstack/local.conf
       devstack.vm.provision "local_conf", type: "shell" do |s|
        s.path = "scripts/local_conf.sh"
-       s.args = "--ip #{ds_node_ip}"
+       s.args = "--ip #{ds_node_ip} --flat #{ds_flat_if} --range #{ds_range}"
       end
 
       # START DEVSTACK on "up" or "reload"
@@ -238,7 +242,12 @@ Vagrant.configure("2") do |config|
      # Grab CoprHD CLI Scripts and Patch Auth Module
      coprhd.vm.provision "coprhd_cli", type: "shell" do |s|
       s.path = "scripts/coprhd_cli.sh"
-      s.args = "-u http://#{ds_node_ip}:5000/v2.0 -p nomoresecrete"
+      s.args = "-u http://#{ds_node_ip}:5000/v2.0 -p nomoresecrete -s #{smis_simulator}"
+     end
+
+     coprhd.vm.provision "banner", type: "shell" do |s|
+      s.path = "scripts/banner.sh"
+      s.args   = "--virtual_ip #{ch_virtual_ip}"
      end
 
     # When SSH-ing to CoprHD box - use storageos user

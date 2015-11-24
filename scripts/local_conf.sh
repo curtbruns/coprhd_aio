@@ -8,6 +8,14 @@ do
     IP="$2"
     shift
     ;;
+    -f|--flat)
+    FLAT="$2"
+    shift
+    ;;
+    -r|--range)
+    RANGE="$2"
+    shift
+    ;;
     *)
     # unknown option
     ;;
@@ -29,6 +37,8 @@ RABBIT_PASSWORD=stackqueue
 SERVICE_PASSWORD=nomoresecrete
 
 HOST_IP=$IP
+FLAT_INTERFACE=$FLAT
+FLOATING_RANGE=$RANGE
 
 
 # Offline can be set to true after first stack'ing

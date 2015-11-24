@@ -39,14 +39,3 @@ do
   sleep $INTERVAL
   let TIMER=TIMER+$INTERVAL
 done
-
-echo ""
-echo "#########################################################"
-echo "#                                                       #"
-echo "#    Please open your browser and connect to CoprHD     #"
-echo "#                                                       #"
-echo "#                https://$VIP                 #"
-echo "#                Username: root                         #"
-echo "#                Password: ChangeMe                     #"
-echo "#                                                       #"
-echo "#########################################################"

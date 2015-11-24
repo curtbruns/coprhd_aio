@@ -72,7 +72,7 @@ cd /vagrant/scaleio/ScaleIO_1.32_RHEL6_Download
 if [ "${CLUSTERINSTALL}" == "True" ]; then
   rpm -Uv ${PACKAGENAME}-mdm-${VERSION}.${OS}.x86_64.rpm
   rpm -Uv ${PACKAGENAME}-sds-${VERSION}.${OS}.x86_64.rpm
-  MDM_IP=${FIRSTMDMIP},${SECONDMDIP} rpm -Uv ${PACKAGENAME}-sdc-${VERSION}.${OS}.x86_64.rpm
+  MDM_IP=${FIRSTMDMIP},${SECONDMDMIP} rpm -Uv ${PACKAGENAME}-sdc-${VERSION}.${OS}.x86_64.rpm
   scli --mdm --add_primary_mdm --primary_mdm_ip ${FIRSTMDMIP} --accept_license
 fi
 

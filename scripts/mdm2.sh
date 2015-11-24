@@ -73,7 +73,7 @@ cd /vagrant/scaleio/ScaleIO_1.32_RHEL6_Download
 if [ "${CLUSTERINSTALL}" == "True" ]; then
   rpm -Uv ${PACKAGENAME}-mdm-${VERSION}.${OS}.x86_64.rpm
   rpm -Uv ${PACKAGENAME}-sds-${VERSION}.${OS}.x86_64.rpm
-  MDM_IP=${FIRSTMDMIP},${SECONDMDIP} rpm -Uv ${PACKAGENAME}-sdc-${VERSION}.${OS}.x86_64.rpm
+  MDM_IP=${FIRSTMDMIP},${SECONDMDMIP} rpm -Uv ${PACKAGENAME}-sdc-${VERSION}.${OS}.x86_64.rpm
 
   scli --login --mdm_ip ${FIRSTMDMIP} --username admin --password admin
   scli --mdm_ip ${FIRSTMDMIP} --set_password --old_password admin --new_password ${PASSWORD}
