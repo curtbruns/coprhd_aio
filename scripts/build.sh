@@ -19,8 +19,8 @@ if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
   cd /tmp
   git clone https://github.com/CoprHD/coprhd-controller.git
   cd coprhd-controller
-  # Change to Release 2.4
-  git checkout -b release-2.4-coprhd origin/release-2.4-coprhd
+  # Change to Feature-Cinder Branch
+  git checkout -b feature-block-service-cinderapi origin/feature-block-service-cinderapi
   # Patch Nginx-IPv4.conf
   cd /tmp/coprhd-controller/etc/nginx
   # Create patch file
