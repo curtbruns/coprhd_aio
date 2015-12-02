@@ -19,8 +19,8 @@ if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
   cd /tmp
   git clone https://github.com/CoprHD/coprhd-controller.git
   cd coprhd-controller
-  # Change to Cinder-API Branch
-  git checkout -b feature-block-service-cinderapi origin/feature-block-service-cinderapi
+  # Change to Release 2.4
+  git checkout -b release-2.4-coprhd origin/release-2.4-coprhd
   # Patch Nginx-IPv4.conf
   cd /tmp/coprhd-controller/etc/nginx
   # Create patch file
@@ -68,6 +68,6 @@ EOF1
   patch -l -p3 -R < /home/vagrant/patch_nginx_ipv4.txt
   cd /tmp/coprhd-controller
   make clobber BUILD_TYPE=oss rpm
-  rm -rf /vagrant/*.rpm
+  #rm -rf /vagrant/*.rpm
   cp -a /tmp/coprhd-controller/build/RPMS/x86_64/storageos-*.x86_64.rpm /vagrant
 fi

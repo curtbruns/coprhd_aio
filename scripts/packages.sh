@@ -20,6 +20,8 @@ zypper -n update
 #remove if existing, otherwise phython-devel and other install will raise a conflict
 zypper -n remove patterns-openSUSE-minimal_base-conflicts
 
+# TODO: Update this to install packages even if build is false as we may have
+# RPM available but not packages installed
 if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
 
   #install required packages

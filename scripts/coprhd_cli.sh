@@ -46,6 +46,9 @@ EOF1
 cd /opt/storageos/cli/bin
 patch -p3 < /home/vagrant/patch_auth.txt
 
+# Make sure git and pip are installed
+zypper -n install git python-pip
+
 # Grab the CoprHD CLI Setup/Teardown scripts
 cd /opt/storageos
 git clone https://github.com/curtbruns/coprhd_cli_scripts.git
