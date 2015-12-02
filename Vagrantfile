@@ -4,21 +4,11 @@
 
 ########################################################
 #
-# Global Settings for ScaleIO, CoprHD, and DevStack
+# Global Settings for ScaleIO and CoprHD
 #
 ########################################################
 network = "192.168.100"
 domain = 'aio.local'
-
-########################################################
-#
-# DevStack Settings 
-#
-########################################################
-ds_node_ip = "#{network}.5"
-ds_flat_if = "eth1"
-ds_range   = "#{network}.224/28"
-ds_vagrantbox = "ubuntu/trusty64"
 
 ########################################################
 #
@@ -139,54 +129,6 @@ Vagrant.configure("2") do |config|
     end
   end
   
-  # DevStack Setup
-  config.vm.define "devstack" do |devstack|
-     devstack.vm.box = "#{ds_vagrantbox}"
-     devstack.vm.host_name = "devstack.#{domain}"
-     devstack.vm.network "private_network", ip: "#{ds_node_ip}"
-
-     # configure virtualbox provider
-     devstack.vm.provider "virtualbox" do |v|
-         v.gui = false
-         v.name = "devstack"
-         v.memory = 3500
-         v.cpus = 2
-     end
-
-     # Setup Swap space
-     devstack.vm.provision "swap", type: "shell" do |s|
-      s.path = "scripts/swap.sh"
-     end
-
-     # Update Ubuntu and Install Pre-reqs
-     devstack.vm.provision "shell", privileged: false, inline: <<-SHELL
-      sudo apt-get update
-      sudo apt-get -y upgrade
-      sudo apt-get -y install git ntp libsqlite3-dev
-  
-      # Get Devstack and checkout kilo branch
-      git clone https://git.openstack.org/openstack-dev/devstack
-      cd devstack
-      git checkout -b stable/kilo origin/stable/kilo
-    SHELL
-
-      # Setup ntpdate crontab
-      devstack.vm.provision "shell" do |s|
-        s.path = "scripts/crontab.sh"
-      end
-
-      # Setup /home/vagrant/devstack/local.conf
-      devstack.vm.provision "local_conf", type: "shell" do |s|
-       s.path = "scripts/local_conf.sh"
-       s.args = "--ip #{ds_node_ip} --flat #{ds_flat_if} --range #{ds_range}"
-      end
-
-      # START DEVSTACK on "up" or "reload"
-      devstack.vm.provision "shell", privileged: false, run: "always" do |s|
-        s.inline = "cd ~vagrant/devstack; ./stack.sh"
-      end
-  end
-
   # CoprHD Setup
   config.vm.define "coprhd" do |coprhd|
      coprhd.vm.box = "#{ch_vagrantbox}"
