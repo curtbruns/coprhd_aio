@@ -184,7 +184,7 @@ Vagrant.configure("2") do |config|
      # Grab CoprHD CLI Scripts and Patch Auth Module
      coprhd.vm.provision "coprhd_cli", type: "shell" do |s|
       s.path = "scripts/coprhd_cli.sh"
-      s.args = "-u http://#{ds_node_ip}:5000/v2.0 -p nomoresecrete -s #{smis_simulator}"
+      s.args = "-s #{smis_simulator}"
      end
 
      coprhd.vm.provision "banner", type: "shell" do |s|
