@@ -51,10 +51,23 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 * Source the coprhd_settings file
 * Check coprhd setup:
   * `./coprhd -c` 
-* Register Keystone as Auth provider, Setup ScaleIO as Storage Provider, Create VPool, VArray, Project, Tenant, and update Devstack to use CoprHD as Volume V2 Service (Cinder):
-  * `./coprhd -s`
-* Delete all traces of CoprHD setup (remove Auth provider, VPool, Varray, Project, Tenant)
-  * `./coprhd -d`
+* Choose your desired Config below - either Config1 or Config2
+
+## Config1: CoprHD Setup with ScaleIO (Easy Button)
+* ./coprhd -s
+* This will add: ScaleIO as a Storage Provider/Backend, ScaleIO network, Virtual Array and Create a ThickSATA Virtual Pool
+
+## Config2: CoprHD Setup with ScaleIO and Devstack and Keystone as Auth Provider
+* ./coprhd -o
+* This will perform everything in the (Easy Button) step, plus:
+* Register Keystone as Auth provider
+* Add Admin Tenant and Project from DevStack into CoprHD
+* Update Devstack to use CoprHD as Volume Service
+
+## Tear Everything Down
+* ./coprhd -d
+* This will delete all traces of CoprHD setup (remove Auth provider, VPool, Varray, Project, Tenant)
   * Note: This doesn't revert the Keystone Endpoint back to Using Cinder as VolumeV2 service
-* Partial Setup (Only Add ScaleIO as backend with Varray/Vpool and Project setup - no Devstack/Keystone changes or Auth provider added)
-  * `./coprhd -p`
+
+## Check CoprHD Setup
+* ./coprhd -c
