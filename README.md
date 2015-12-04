@@ -66,4 +66,3 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 
 ## Check CoprHD Setup
 * ./coprhd -c
-
