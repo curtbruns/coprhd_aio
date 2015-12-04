@@ -2,8 +2,9 @@ vagrant-coprhd-scaleio-devstack
 ---------------
 
 # Description
-
-Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify the Vagrantfile as needed to configure the network, passwords, etc for your desired setup.
+## Two Branches: Master (4 VMs) and devstack-integration (5 VMs)
+Master branch includes: Vagrant environment for 3 ScaleIO VMs and 1 CoprHD VM
+Devstack-integration branch includes: Master branch VMs + Kilo-based DevStack VM.  Modify the Vagrantfile as needed to configure the network, passwords, etc for your desired setup.
 
 # Prerequisites
 * vagrant
@@ -13,7 +14,7 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 
 # Usage
 * Modify the Vagrantfile for the Host-only network you want to create/use for all VMs
-* Launch/Provision all 5 VMs (Full Environment of CoprHD + ScaleIO + Devstack): 
+* Launch/Provision all VMs
   * `vagrant up`
 * Launch only a subset of VM(s)
   * `vagrant up [VM]`
@@ -34,7 +35,7 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 * Stop CoprHD services
   * `sudo /etc/storageos/storageos stop`
 * CoprHD source code is in: /tmp/coprhd-controller/
-* Checked out branch is: feature-block-service-cinderapi
+* Checked out branch is: release-2.4-coprhd
 * Make changes and recompile:
   * `sudo make clobber BUILD_TYPE=oss rpm`
 
@@ -52,12 +53,12 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 * This will add: ScaleIO as a Storage Provider/Backend, ScaleIO network, Virtual Array and Create a ThickSATA Virtual Pool
 
 ## Config2: CoprHD Setup with ScaleIO and Devstack and Keystone as Auth Provider
+###Note: You should be on the devstack-integration branch which includes the devstack VM
 * ./coprhd -o
 * This will perform everything in the (Easy Button) step, plus:
 * Register Keystone as Auth provider
 * Add Admin Tenant and Project
 * Update Devstack to use CoprHD as Volume Service
-* NOTE: Use the devstack-integration branch to get the kilo Devstack VM enabled
 
 ## Tear Everything Down
 * ./coprhd -d
