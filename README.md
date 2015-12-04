@@ -51,18 +51,10 @@ Vagrant environment for 3 ScaleIO VMs, 1 CoprHD VM, and 1 DevStack VM.  Modify t
 * Source the coprhd_settings file
 * Check coprhd setup:
   * `./coprhd -c` 
-* Choose your desired Config below - either Config1 or Config2
 
-## Config1: CoprHD Setup with ScaleIO (Easy Button)
+## CoprHD Setup with ScaleIO (Easy Button)
 * ./coprhd -s
 * This will add: ScaleIO as a Storage Provider/Backend, ScaleIO network, Virtual Array and Create a ThickSATA Virtual Pool
-
-## Config2: CoprHD Setup with ScaleIO and Devstack and Keystone as Auth Provider
-* ./coprhd -o
-* This will perform everything in the (Easy Button) step, plus:
-* Register Keystone as Auth provider
-* Add Admin Tenant and Project from DevStack into CoprHD
-* Update Devstack to use CoprHD as Volume Service
 
 ## Tear Everything Down
 * ./coprhd -d
