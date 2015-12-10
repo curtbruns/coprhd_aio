@@ -19,6 +19,9 @@ ds_node_ip = "#{network}.5"
 ds_flat_if = "eth1"
 ds_range   = "#{network}.224/28"
 ds_vagrantbox = "ubuntu/trusty64"
+# Allowed values for ds_release: kilo or liberty
+ds_release = "kilo"
+
 
 ########################################################
 #
@@ -159,16 +162,14 @@ Vagrant.configure("2") do |config|
      end
 
      # Update Ubuntu and Install Pre-reqs
-     devstack.vm.provision "shell", privileged: false, inline: <<-SHELL
-      sudo apt-get update
-      sudo apt-get -y upgrade
-      sudo apt-get -y install git ntp libsqlite3-dev
-  
-      # Get Devstack and checkout kilo branch
-      git clone https://git.openstack.org/openstack-dev/devstack
-      cd devstack
-      git checkout -b stable/kilo origin/stable/kilo
-    SHELL
+    if !(ds_release.eql? "kilo" or ds_release.eql? "liberty")
+        print "Choose kilo or liberty for ds_release in Vagrantfile\n"
+        exit
+    end
+     devstack.vm.provision "devstack_clone", privileged: false, type: "shell" do |s|
+        s.path = "scripts/devstack_setup.sh"
+        s.args   = "-r #{ds_release}"
+     end
 
       # Setup ntpdate crontab
       devstack.vm.provision "shell" do |s|
@@ -178,7 +179,7 @@ Vagrant.configure("2") do |config|
       # Setup /home/vagrant/devstack/local.conf
       devstack.vm.provision "local_conf", type: "shell" do |s|
        s.path = "scripts/local_conf.sh"
-       s.args = "--ip #{ds_node_ip} --flat #{ds_flat_if} --range #{ds_range}"
+       s.args = "--ip #{ds_node_ip} --flat #{ds_flat_if} --range #{ds_range} --release #{ds_release}"
       end
 
       # START DEVSTACK on "up" or "reload"

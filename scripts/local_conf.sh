@@ -4,6 +4,10 @@ do
   key="$1"
 
   case $key in
+    --release)
+    RELEASE="$2"
+    shift
+    ;;
     -i|--ip)
     IP="$2"
     shift
@@ -48,16 +52,15 @@ LOGFILE=\$DEST/logs/stack.sh.log
 LOGDAYS=2
 
 # Clone the desired Devstack/Project branches
-REQUIREMENTS_BRANCH=stable/kilo
-CINDER_BRANCH=stable/kilo
-GLANCE_BRANCH=stable/kilo
-HORIZON_BRANCH=stable/kilo
-KEYSTONE_BRANCH=stable/kilo
-KEYSTONECLIENT_BRANCH=stable/kilo
-NOVA_BRANCH=stable/kilo
-NOVACLIENT_BRANCH=stable/kilo
-NEUTRON_BRANCH=stable/kilo
-
+REQUIREMENTS_BRANCH=stable/$RELEASE
+CINDER_BRANCH=stable/$RELEASE
+GLANCE_BRANCH=stable/$RELEASE
+HORIZON_BRANCH=stable/$RELEASE
+KEYSTONE_BRANCH=stable/$RELEASE
+KEYSTONECLIENT_BRANCH=stable/$RELEASE
+NOVA_BRANCH=stable/$RELEASE
+NOVACLIENT_BRANCH=stable/$RELEASE
+NEUTRON_BRANCH=stable/$RELEASE
 
 SWIFT_BRANCH=2.3.0
 SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
