@@ -182,9 +182,9 @@ Vagrant.configure("2") do |config|
        s.args = "--ip #{ds_node_ip} --flat #{ds_flat_if} --range #{ds_range} --release #{ds_release}"
       end
 
-      # START DEVSTACK on "up" or "reload"
+      # START DEVSTACK on "up" or "reload" - Set OFFLINE True after stacking
       devstack.vm.provision "shell", privileged: false, run: "always" do |s|
-        s.inline = "cd ~vagrant/devstack; ./stack.sh"
+        s.inline = "cd ~vagrant/devstack; ./stack.sh; sed -i 's/#OFFLINE=True/OFFLINE=True/' local.conf"
       end
   end
 
