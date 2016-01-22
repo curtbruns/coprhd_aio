@@ -52,3 +52,11 @@ node_count=$COUNT
 node_id=$ID
 EOF
 
+
+#Create bash.bash.bashrc.local for unset_proxy
+cat > "/etc/bash.bashrc.local" << EOF
+unset_proxy()
+{
+    unset http_proxy https_proxy socks_proxy ftp_proxy no_proxy HTTP_PROXY HTTPS_PROXY FTP_PROXY NO_PROXY
+}
+EOF
