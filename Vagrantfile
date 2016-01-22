@@ -4,11 +4,24 @@
 
 ########################################################
 #
-# Global Settings for ScaleIO and CoprHD
+# Global Settings for ScaleIO, CoprHD
 #
 ########################################################
 network = "192.168.100"
 domain = 'aio.local'
+
+script_proxy_args = ""
+# Check if we are currently behind proxy
+# We will pass into build/provision scripts if set
+if ENV["http_proxy"]
+   http_proxy, http_proxy_port = ENV["http_proxy"].split(":")
+   script_proxy_args = " --proxy #{http_proxy} --port #{http_proxy_port}"
+end
+
+if ENV["https_proxy"]
+   https_proxy, https_proxy_port = ENV["https_proxy"].split(":")
+   script_proxy_args += " --secure_proxy #{https_proxy} --secure_port #{https_proxy_port}"
+end
 
 ########################################################
 #
@@ -73,12 +86,26 @@ sio_nodes.each { |node_name|
 }
 
 Vagrant.configure("2") do |config|
+
+  # If Proxy is set when provisioning, we set it permanently in each VM
+  # If Proxy is not set when provisioning, we won't set it
   if Vagrant.has_plugin?("vagrant-proxyconf")
+    if ENV["http_proxy"]
+      config.proxy.http    = ENV["http_proxy"]
+    end
+    if ENV["https_proxy"]
+      config.proxy.https   = ENV["https_proxy"]
+    end
+    if ENV["no_proxy"]
+      config.proxy.no_proxy = ENV["no_proxy"]
+    end
   end
+
   # Enable caching to speed up package installation for second run
   if Vagrant.has_plugin?("vagrant-cachier")
     config.cache.scope = :box
   end
+
   # ScaleIO Setup
   scaleio_nodes.each do |node|
     config.vm.define node[:hostname] do |node_config|
@@ -155,7 +182,10 @@ Vagrant.configure("2") do |config|
      end
 
      # download, patch and build nginx
-     coprhd.vm.provision "nginx", type: "shell", path: "scripts/nginx.sh"
+     coprhd.vm.provision "nginx", type: "shell" do |s|
+      s.path = "scripts/nginx.sh"
+      s.args = ""
+     end
 
      # create CoprHD configuration file
      coprhd.vm.provision "config", type: "shell" do |s|
@@ -167,6 +197,7 @@ Vagrant.configure("2") do |config|
      coprhd.vm.provision "build", type: "shell" do |s|
       s.path = "scripts/build.sh"
       s.args   = "--build #{build}"
+      s.args  += script_proxy_args
      end
 
       # Setup ntpdate crontab
@@ -191,10 +222,6 @@ Vagrant.configure("2") do |config|
       s.path = "scripts/banner.sh"
       s.args   = "--virtual_ip #{ch_virtual_ip}"
      end
-
-    # When SSH-ing to CoprHD box - use storageos user
-    #coprhd.ssh.username = "storageos"
-    #coprhd.ssh.password = "vagrant"
 
   end
 end
