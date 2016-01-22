@@ -20,7 +20,7 @@ end
 
 if ENV["https_proxy"]
    https_proxy, https_proxy_port = ENV["https_proxy"].split(":")
-   script_proxy_args += " --proxy #{http_proxy} --port #{http_proxy_port}"
+   script_proxy_args += " --secure_proxy #{https_proxy} --secure_port #{https_proxy_port}"
 end
 
 
