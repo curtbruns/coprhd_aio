@@ -38,6 +38,7 @@ ds_node_ip = "#{network}.5"
 ds_flat_if = "eth1"
 ds_range   = "#{network}.224/28"
 ds_vagrantbox = "ubuntu/trusty64"
+ds_vagrantbox_url = "https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/20160120.0.1/providers/virtualbox.box"
 # Allowed values for ds_release: kilo or liberty
 ds_release = "kilo"
 
@@ -198,6 +199,7 @@ Vagrant.configure("2") do |config|
 ########################################################
   config.vm.define "devstack" do |devstack|
      devstack.vm.box = "#{ds_vagrantbox}"
+     devstack.vm.box_url = "#{ds_vagrantbox_url}"
      devstack.vm.host_name = "devstack.#{domain}"
      devstack.vm.network "private_network", ip: "#{ds_node_ip}"
 
@@ -219,8 +221,9 @@ Vagrant.configure("2") do |config|
         print "Choose kilo or liberty for ds_release in Vagrantfile\n"
         exit
     end
-     devstack.vm.provision "shell", privileged: false do |s|
+     devstack.vm.provision "shell" do |s|
         s.path = "scripts/devstack_setup.sh"
+        s.privileged = false
         s.args   = "-r #{ds_release}"
      end
 
@@ -236,7 +239,8 @@ Vagrant.configure("2") do |config|
       end
 
       # START DEVSTACK on "up" or "reload" - Set OFFLINE True after stacking
-      devstack.vm.provision "shell", privileged: false, run: "always" do |s|
+      devstack.vm.provision "shell", run: "always" do |s|
+        s.privileged = false
         s.inline = "cd ~vagrant/devstack; ./stack.sh; sed -i 's/#OFFLINE=True/OFFLINE=True/' local.conf"
       end
   end

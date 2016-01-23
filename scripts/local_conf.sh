@@ -48,6 +48,8 @@ FLOATING_RANGE=$RANGE
 # Offline can be set to true after first stack'ing
 #OFFLINE=True
 
+GIT_BASE=\${GIT_BASE:-https://git.openstack.org}
+
 LOGFILE=\$DEST/logs/stack.sh.log
 LOGDAYS=2
 
