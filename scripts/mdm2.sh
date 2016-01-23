@@ -69,6 +69,7 @@ yum install ntpdate -y
 chkconfig iptables off
 chkconfig ip6tables off
 
+echo "Installing ScaleIO and provisioning Cluster"
 cd /vagrant/scaleio/ScaleIO_1.32_RHEL6_Download
 if [ "${CLUSTERINSTALL}" == "True" ]; then
   rpm -Uv ${PACKAGENAME}-mdm-${VERSION}.${OS}.x86_64.rpm

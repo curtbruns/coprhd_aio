@@ -37,8 +37,8 @@ index e457440..3fcbaad 100644
  import ConfigParser
 +import requests.packages.urllib3
 +requests.packages.urllib3.disable_warnings()
- 
- 
+
+
  class Authentication(object):
 EOF1
 
@@ -53,8 +53,15 @@ zypper -n install git python-pip
 cd /opt/storageos
 git clone https://github.com/curtbruns/coprhd_cli_scripts.git
 chown -R storageos /opt/storageos/coprhd_cli_scripts
+# Pip with certain proxies still causing issue - just
+# use easy_install in that case
+if [[ -z $http_proxy ]]; then
 pip install python-openstackclient
 pip install pexpect
+else
+easy_install python-openstackclient
+easy_install pexpect
+fi
 
 # Create the Keystone Authentication config file
 cd coprhd_cli_scripts/
