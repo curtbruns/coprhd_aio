@@ -53,7 +53,7 @@ node_id=$ID
 EOF
 
 
-#Create bash.bash.bashrc.local for unset_proxy
+#Create bash.bashrc.local for unset_proxy
 cat > "/etc/bash.bashrc.local" << EOF
 unset_proxy()
 {

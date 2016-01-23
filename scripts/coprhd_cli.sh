@@ -53,8 +53,16 @@ zypper -n install git python-pip
 cd /opt/storageos
 git clone https://github.com/curtbruns/coprhd_cli_scripts.git
 chown -R storageos /opt/storageos/coprhd_cli_scripts
-pip install python-openstackclient
-pip install pexpect
+
+# Pip with certain proxies still causing issue - just
+# use easy_install in that case
+if [[ -z $http_proxy ]]; then
+  pip install python-openstackclient
+  pip install pexpect
+else
+  easy_install python-openstackclient
+  easy_install pexpect
+fi
 
 # Create the Keystone Authentication config file
 cd coprhd_cli_scripts/

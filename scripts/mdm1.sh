@@ -64,10 +64,12 @@ chkconfig iptables off
 chkconfig ip6tables off
 
 # Always install ScaleIO IM
+echo "Installing Gateway"
 cd /vagrant/scaleio/ScaleIO_1.32_Gateway_for_Linux_Download
 export GATEWAY_ADMIN_PASSWORD=${PASSWORD}
 rpm -Uv ${PACKAGENAME}-gateway-${VERSION}.noarch.rpm
 
+echo "Installing ScaleIO"
 cd /vagrant/scaleio/ScaleIO_1.32_RHEL6_Download
 if [ "${CLUSTERINSTALL}" == "True" ]; then
   rpm -Uv ${PACKAGENAME}-mdm-${VERSION}.${OS}.x86_64.rpm
