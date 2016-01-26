@@ -24,8 +24,9 @@ if ENV["http_proxy"] || ENV["https_proxy"]
   script_proxy_args += " --proxy #{http_proxy} --port #{http_proxy_port}"
 
   temp = ENV["https_proxy"].dup
-  temp.slice! "https://"
-  https_proxy, https_proxy_port = temp.split(":")
+  # Some proxies use http or https as secure proxy, handle both
+  temp =~ =~/https*:\/\/(.*)/
+  https_proxy, https_proxy_port = $1.split(":")
   script_proxy_args += " --secure_proxy #{https_proxy} --secure_port #{https_proxy_port}"
 end
 
