@@ -17,6 +17,10 @@ done
 # update system
 # zypper -n update
 
+# Report proxy settings
+echo "Proxy settings are: "
+echo `env | grep -i prox`
+
 #remove if existing, otherwise python-devel and other install will raise a conflict
 zypper -n remove patterns-openSUSE-minimal_base-conflicts
 
@@ -35,7 +39,7 @@ if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
   zypper addrepo -k -t rpm-md -n suse-13.2-python http://download.opensuse.org/repositories/devel:/languages:/python/openSUSE_13.2 suse-13.2-python
   zypper addrepo -k -t rpm-md -n suse-13.2-scalpel4k http://download.opensuse.org/repositories/home:/scalpel4k/openSUSE_Factory/ suse-13.2-scalpel4k
   zypper addrepo -k -t rpm-md -n suse-13.2-seife http://download.opensuse.org/repositories/home:/seife:/testing/openSUSE_13.2 suse-13.2-seife
-  #zypper addrepo -k -t rpm-md -n suse-13.2-network_utilities http://download.opensuse.org/repositories/network:utilities/openSUSE_13.2 suse-13.2-network_utilities
+  zypper addrepo -k -t rpm-md -n suse-13.2-network_utilities http://download.opensuse.org/repositories/network:utilities/openSUSE_13.2 suse-13.2-network_utilities
 
   #refresh repos
   zypper --gpg-auto-import-keys -n refresh

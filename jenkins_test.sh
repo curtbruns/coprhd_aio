@@ -1,8 +1,8 @@
 #!/bin/bash
 
-vagrant halt
+vagrant halt coprhd
 
-echo "Testing the CoprHD + ScaleIO communication/build"
+echo "Testing CoprHD Vagrant VM"
 echo "Here are the proxy settings: "
 env | grep -i proxy
 
@@ -27,7 +27,17 @@ fi
 vagrant destroy -f coprhd
 
 # Bring up CoprHD, which includes building the latest master branch
+echo "Launching CoprHD"
 vagrant up coprhd
+STATUS=$?
+
+if [[ ${STATUS} -ne 0 ]]
+then
+   echo "Vagrant up on CoprHD Failed"
+   vagrant halt coprhd
+   vagrant destroy -f coprhd
+   exit ${STATUS}
+fi
 
 # Now that CoprHD is up and running - check out version tag versus commit tag in git repo - should match
 rm ./cookiefile
@@ -51,6 +61,9 @@ else
     EXIT_STATUS=1
 fi
 
+# Cleanup
+echo "Delete cookiefile and stop vagrant"
+rm ./cookiefile
 vagrant halt coprhd
 
 exit ${EXIT_STATUS}
