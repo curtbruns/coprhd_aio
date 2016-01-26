@@ -44,9 +44,13 @@ echo "VERSION is: ${VERSION}"
 echo "COMMIT_TAG is: ${COMMIT_TAG}"
 if [[ $VERSION == *${COMMIT_TAG}* ]]
 then
+    EXIT_STATUS=0
     echo "VERSION MATCHES GIT TAG"
 else
     echo "VERSION MISMATCH: COMMIT_TAG from REPO: ${COMMIT_TAG}, CoprHD Version:${VERSION}"
-    exit 1
+    EXIT_STATUS=1
 fi
 
+vagrant halt coprhd
+
+exit ${EXIT_STATUS}
