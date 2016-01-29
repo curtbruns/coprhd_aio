@@ -4,18 +4,20 @@
 
 ########################################################
 #
-# Global Settings for ScaleIO, CoprHD
+# Global Settings for Environment
 #
 ########################################################
 network = "192.168.100"
 domain = 'aio.local'
+# Change to ubuntu if you want the default to be Ubuntu-based VM/CoprHD
+coprhd_vm = 'opensuse'
 
 script_proxy_args = ""
 # Check if we are currently behind proxy
 # We will pass into build/provision scripts if set
 if ENV["http_proxy"] || ENV["https_proxy"]
   if !(Vagrant.has_plugin?("vagrant-proxyconf"))
-    raise StandardError, "Env Proxy set but vagrant-proxyconf not installed. Fix with: vagrant plugin install vagrant-proxyconf"
+    abort "Env Proxy set but vagrant-proxyconf not installed. Fix with: vagrant plugin install vagrant-proxyconf"
    end
    # Remove http and https from proxy setting
    temp = ENV["http_proxy"].dup
@@ -36,12 +38,23 @@ end
 # CoprHD Settings
 #
 ########################################################
+if ARGV.include? 'deb_coprhd'
+    coprhd_vm = 'ubuntu'
+    puts "Ubuntu Chosen for CoprHD VM"
+elsif ARGV.include? 'opensuse_coprhd'
+    coprhd_vm = 'opensuse'
+    puts "OpenSuse Chosen for CoprHD VM"
+end
 ch_node_ip = "#{network}.11"
 ch_virtual_ip = "#{network}.10"
 ch_gw_ip = "#{network}.1"
 ch_vagrantbox = "vchrisb/openSUSE-13.2_64"
 ch_vagrantboxurl = "https://atlas.hashicorp.com/vchrisb/boxes/openSUSE-13.2_64/versions/0.1.3/providers/virtualbox.box"
+deb_ch_vagrantbox = "ubuntu/trusty64"
+deb_ch_vagrantboxurl = "https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/20160120.0.1/providers/virtualbox.box"
+# Default is to build CoprHD when Vagrant provisioning new VM
 build = true
+# Default is to not include the SMI-S Simulator for backends, we use ScaleIO
 smis_simulator = false
 
 ########################################################
@@ -185,6 +198,8 @@ Vagrant.configure("2") do |config|
 # Launch CoprHD
 #
 ########################################################
+  if coprhd_vm == 'opensuse' then
+  puts "Default (opensuse) CoprHD Instance"
   config.vm.define "coprhd" do |coprhd|
      coprhd.vm.box = "#{ch_vagrantbox}"
      coprhd.vm.box_url = "#{ch_vagrantboxurl}"
@@ -251,6 +266,68 @@ Vagrant.configure("2") do |config|
       s.path = "scripts/banner.sh"
       s.args   = "--virtual_ip #{ch_virtual_ip}"
      end
+  end
+  end
+########################################################
+#
+# Launch Ubuntu CoprHD
+#
+########################################################
+  if coprhd_vm == 'ubuntu' then
+  puts "Ubuntu CoprHD"
+  config.vm.define "deb_coprhd" do |deb_coprhd|
+     deb_coprhd.vm.box = "#{deb_ch_vagrantbox}"
+#    deb_coprhd.vm.box_url = "#{deb_ch_vagrantboxurl}"
+     deb_coprhd.vm.host_name = "coprhd1.#{domain}"
+     deb_coprhd.vm.network "private_network", ip: "#{ch_node_ip}"
 
+     # configure virtualbox provider
+     deb_coprhd.vm.provider "virtualbox" do |v|
+         v.gui = false
+         v.name = "UbuntuCoprHD"
+         v.memory = 3000
+         v.cpus = 4
+     end
+
+     # install dependencies and CoprHD specific env
+     deb_coprhd.vm.provision "shell" do |s|
+      s.path = "scripts/deb-inst-deps.sh"
+      s.args   = "--build #{build} --node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1 "
+      s.args  += script_proxy_args
+     end
+
+     # upload ubuntu patch
+     deb_coprhd.vm.provision "file", source: "coprhd-ubuntu.patch", destination: "/tmp/coprhd-ubuntu.patch"
+
+     # download and compile CoprHD from sources
+     deb_coprhd.vm.provision "shell" do |s|
+      s.path = "scripts/deb-build-coprhd.sh"
+      s.args   = "--build #{build}"
+      s.args  += script_proxy_args
+     end
+
+      # Setup ntpdate crontab
+      deb_coprhd.vm.provision "shell" do |s|
+        s.path = "scripts/crontab.sh"
+        s.privileged = false
+      end
+
+     # install CoprHD
+     deb_coprhd.vm.provision "shell" do |s|
+      s.path = "scripts/deb-inst-coprhd.sh"
+      s.args   = "--virtual_ip #{ch_virtual_ip}"
+     end
+
+     # TODO for Ubuntu: Grab CoprHD CLI Scripts and Patch Auth Module
+     #deb_coprhd.vm.provision "shell" do |s|
+     # s.path = "scripts/coprhd_cli.sh"
+     # s.args = "-s #{smis_simulator}"
+     #end
+
+     deb_coprhd.vm.provision "shell" do |s|
+      s.path = "scripts/banner.sh"
+      s.args   = "--virtual_ip #{ch_virtual_ip}"
+     end
+  end
   end
 end

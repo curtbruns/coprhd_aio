@@ -1,0 +1,936 @@
+diff --git a/Makefile b/Makefile
+index 834c807..719b6ce 100644
+--- a/Makefile
++++ b/Makefile
+@@ -27,8 +27,8 @@ all clean::
+ 
+ # Local installation and building RPM, OVF and ISO packages
+ #
+-.PHONY: _install rpm ovf ova vsphere hyperv iso docker svt
+-_install rpm ovf ova vsphere hyperv iso docker svt: all
++.PHONY: _install rpm deb ovf ova vsphere hyperv iso docker svt
++_install rpm deb ovf ova vsphere hyperv iso docker svt: all
+ 	$(ATSIGN)$(MAKE) -C packaging $(@)
+ 
+ # Top level clobber: delete everything in the build directory
+diff --git a/Makefile.common b/Makefile.common
+index 0fc2cf5..14717fb 100644
+--- a/Makefile.common
++++ b/Makefile.common
+@@ -17,7 +17,7 @@
+ 
+ # Shell used by make to exectute commands (must be first)
+ #
+-                     SHELL = /bin/sh
++                     SHELL = /bin/bash
+ 
+ # These variables make things verbose or not
+ #
+@@ -112,7 +112,7 @@ endif
+                     MOUNT := /bin/mount
+                    UMOUNT := /bin/umount
+                     TOUCH := /usr/bin/touch
+-                      SED := /usr/bin/sed
++                      SED := sed
+                       AWK := /usr/bin/awk
+                    PYTHON := /usr/bin/python
+                       CMP := /usr/bin/cmp
+diff --git a/etc/init/boot-ovfenv.conf b/etc/init/boot-ovfenv.conf
+new file mode 100644
+index 0000000..fa0a779
+--- /dev/null
++++ b/etc/init/boot-ovfenv.conf
+@@ -0,0 +1,12 @@
++description "CoprHD StorageOS boot-ovfenv service"
++author "Anjaneya Chagam <Anjaneya.Chagam@intel.com>"
++
++start on local-filesystems
++start on runlevel [2345]
++stop on runlevel [!2345]
++
++chdir /etc/storageos
++
++limit nofile 65535 65535
++
++exec /etc/storageos/boot-ovfenv start
+diff --git a/etc/init/keepalived.conf b/etc/init/keepalived.conf
+new file mode 100644
+index 0000000..73d8606
+--- /dev/null
++++ b/etc/init/keepalived.conf
+@@ -0,0 +1,18 @@
++description "CoprHD Keepalived service"
++author "Anjaneya Chagam <Anjaneya.Chagam@intel.com>"
++
++start on (local-filesystems and static-network-up)
++start on runlevel [2345]
++stop on runlevel [!2345]
++stop on static-network-up
++
++respawn
++respawn limit 5 30
++
++chdir /var/run
++
++script
++    PIDFile=/var/run/keepalived.pid
++    export PIDFile
++    exec /usr/sbin/keepalived -f /etc/keepalived/keepalived.conf -D
++end script
+diff --git a/etc/init/nginx.conf b/etc/init/nginx.conf
+new file mode 100644
+index 0000000..101c284
+--- /dev/null
++++ b/etc/init/nginx.conf
+@@ -0,0 +1,19 @@
++description "CoprHD Nginx service"
++author "Anjaneya Chagam <Anjaneya.Chagam@intel.com>"
++
++start on (local-filesystems and static-network-up)
++start on runlevel [2345]
++stop on runlevel [!2345]
++stop on static-network-up
++
++respawn
++#respawn limit 100 10
++respawn limit unlimited
++
++chdir /var/run
++
++script
++    PIDFile=/var/run/nginx.pid
++    export PIDFile
++    exec /etc/nginx/nginx.wrapper /usr/sbin/nginx -c /etc/nginx/nginx.conf
++end script
+diff --git a/etc/init/storageos-template.conf b/etc/init/storageos-template.conf
+new file mode 100644
+index 0000000..7b1a099
+--- /dev/null
++++ b/etc/init/storageos-template.conf
+@@ -0,0 +1,30 @@
++description "CoprHD StorageOS @svcname@ service"
++author "Anjaneya Chagam <Anjaneya.Chagam@intel.com>, Intel Corporation"
++
++start on (local-filesystems and static-network-up)
++start on runlevel [2345]
++stop on runlevel [!2345]
++stop on static-network-up
++
++respawn
++respawn limit 5 30
++limit nofile 32768 32768
++
++chdir /
++
++env EnvironmentFile=/etc/sysconfig/storageos
++env PIDFile=/var/run/storageos/@svcname@svc.pid
++
++pre-start script
++	[ -f $EnvironmentFile ] || { echo "missing $EnvironmentFile file."; stop; exit 0; }
++end script
++
++script
++    echo $$ > $PIDFile
++    [ -f $EnvironmentFile ] && . $EnvironmentFile
++	exec /bin/bash -c "${STORAGEOS_DIR}/bin/@svcname@svc${STORAGEOS_VARIANT} file:${STORAGEOS_DIR}/conf/@svcname@-conf.xml file:${STORAGEOS_DIR}/conf/@svcname@-emc-conf.xml file:${STORAGEOS_DIR}/conf/@svcname@-oss-conf.xml >${STORAGEOS_DIR}/logs/@svcname@svc.out 2>&1"
++end script
++
++post-stop script
++	[ -r $PIDFile ] && /bin/rm $PIDFile
++end script
+diff --git a/etc/oss/storageos/boot-ovfenv b/etc/oss/storageos/boot-ovfenv
+index 2e6907d..c8b28d0 100755
+--- a/etc/oss/storageos/boot-ovfenv
++++ b/etc/oss/storageos/boot-ovfenv
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/bin/bash
+ #
+ # Copyright (c) 2012 EMC Corporation
+ # All Rights Reserved
+@@ -50,7 +50,7 @@ _set_storageos_variable() {
+ 
+ _setSysconfigEnv() {
+ 
+-    /sbin/findfs UID="3c426f75-726e-6520-2f6f-7666656e763e" >/dev/null 2>&1 && STORAGEOS_BOOT_MODE=config
++    /sbin/findfs UUID="3c426f75-726e-6520-2f6f-7666656e763e" >/dev/null 2>&1 && STORAGEOS_BOOT_MODE=config
+ 
+     for arg in $(</proc/cmdline) ; do
+         case ${arg} in
+diff --git a/etc/oss/systool b/etc/oss/systool
+index 560ce4e..1a3bbd8 100755
+--- a/etc/oss/systool
++++ b/etc/oss/systool
+@@ -251,7 +251,14 @@ EOF
+ }
+ 
+ _restart() {
+-    /usr/bin/systemctl restart storageos-${1%*svc} || _fatal2 67 "Unexpected restart ${1} failure. Error code $?"
++	case $(lsb_release -si) in
++		Ubuntu|Debian|Devuan)
++			restart storageos-${1%*svc} || _fatal2 67 "Unexpected restart ${1} failure. Error code $?"
++			;;
++		*)
++    		/usr/bin/systemctl restart storageos-${1%*svc} || _fatal2 67 "Unexpected restart ${1} failure. Error code $?"
++			;;
++	esac
+ }
+ 
+ _reload() {
+diff --git a/etc/storageos/storageos b/etc/storageos/storageos
+index 4295942..8e94c04 100755
+--- a/etc/storageos/storageos
++++ b/etc/storageos/storageos
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/bin/bash
+ #
+ # Copyright (c) 2012-2015 EMC Corporation
+ # All Rights Reserved
+@@ -32,6 +32,21 @@
+ 
+ # Source /etc/sysconfig/storageos and make the basic checks
+ #
++case $(lsb_release -si) in
++    Ubuntu|Debian|Devuan)
++        DISTRO="debian"
++        ;;
++    CentOS|Fedora|RedHatEnterpriseServer)
++        DISTRO="fedora"
++        ;;
++    *SUSE*)
++        DISTRO="opensuse" # just keeping lower case to make it easy
++        ;;
++    *)
++        echo "$(lsb_release -si) is unknown distribution, exiting.."
++        ;;
++esac
++
+ STORAGEOS_SYSCONFIG=${STORAGEOS_SYSCONFIG:-'/etc/sysconfig/storageos'}
+ test -r "${STORAGEOS_SYSCONFIG}"       || exit 6
+ . ${STORAGEOS_SYSCONFIG}
+@@ -43,7 +58,7 @@ STORAGEOS_LOGS=${STORAGEOS_LOGS:-"${STORAGEOS_DIR}/logs"}
+ test -d "${STORAGEOS_LOGS}"            || exit 6
+ 
+ SYSTEMCTL=/usr/bin/systemctl
+-test -x "${SYSTEMCTL}"            || exit 6
++[[ "$DISTRO" != "debian" && ! -x "${SYSTEMCTL}" ]] && exit 6
+ 
+ export PRODUCT_HOME="${STORAGEOS_DIR}"
+ export PLATFORM="linux"
+@@ -59,30 +74,55 @@ _checkConfigurable() {
+ }
+ 
+ _startsvc() {
+-    _checkactive ${1} || ${SYSTEMCTL} start storageos-${1}.service
++	if [[ "$DISTRO" == "debian" ]]; then
++		_checkactive ${1} || start storageos-${1}
++	else
++		_checkactive ${1} || ${SYSTEMCTL} start storageos-${1}.service
++	fi
+ }
+ 
+ _checksvc() {
+-    ${SYSTEMCTL} -n 0 status storageos-${1}.service
++	if [[ "$DISTRO" == "debian" ]]; then
++		sudo status storageos-${1}
++	else
++    	${SYSTEMCTL} -n 0 status storageos-${1}.service
++	fi
+ }
+ 
+ _killsvc() {
+-    ${SYSTEMCTL} stop storageos-${1}.service
++	if [[ "$DISTRO" == "debian" ]]; then
++		sudo stop storageos-${1}
++	else
++		${SYSTEMCTL} stop storageos-${1}.service
++	fi
+ }
+ 
+ # Enable service autostart during boot
+ _enablesvc() {
+-    ${SYSTEMCTL} enable storageos-${1}.service
++	if [[ "$DISTRO" == "debian" ]]; then
++		sudo rm -f /etc/init/storageos-${1}.override
++	else
++		${SYSTEMCTL} enable storageos-${1}.service
++	fi
+ }
+ 
+ # Disable service autostart during boot
+ _disablesvc() {
+-    ${SYSTEMCTL} disable storageos-${1}.service
++	if [[ "$DISTRO" == "debian" ]]; then
++		echo manual | sudo tee /etc/init/storageos-${1}.override
++	else
++		${SYSTEMCTL} disable storageos-${1}.service
++	fi
+ }
+ 
+ _checkactive() {
+-    local status=$(${SYSTEMCTL} is-active storageos-${1}.service)
+-    [ ${status} == "active" ] || return 1
++	if [[ "$DISTRO" == "debian" ]]; then
++		local status=$(sudo status storageos-${1} | nawk '{print $2;}')
++    	[[ ${status} == "start/running," ]] || return 1
++	else
++		local status=$(${SYSTEMCTL} is-active storageos-${1}.service)
++		[ ${status} == "active" ] || return 1
++	fi
+ }
+ 
+ # Start services 
+@@ -92,7 +132,10 @@ _start_services() {
+         exit
+     fi
+ 
+-    /etc/storageos/ipchecktool --panic
++	
++	# this is really not needed for single machine, development environmets 
++    [[ "$DISTRO" != "debian" ]] && /etc/storageos/ipchecktool --panic
++
+     echo -n "Starting @product_brand@ ${STORAGEOS_VARIANT} services "
+     for svc in @systemd_storageos@ ; do
+         _startsvc ${svc}
+diff --git a/packaging/Makefile b/packaging/Makefile
+index be56a1b..2285b09 100644
+--- a/packaging/Makefile
++++ b/packaging/Makefile
+@@ -51,6 +51,30 @@ include ../Makefile.common
+        RPMBUILD_CONTENT_MD5_FILE  = $(OBJDIR)/rpmcontent.md5
+                  DOCKER_BUILDDIR  = $(OBJDIR)/dockerbuild
+ 
++                   DEBBUILD_NAME ?= storageos
++                  DEBBUILD_FORCE ?= FORCE
++
++               DEBBUILD_DEB_ARCH := x86_64
++     DEBBUILD_DEB_ARCH_FORMATTED := amd64
++               DEBBUILD_DEBS_DIR  = $(BUILD_BASE)/DEBS
++                    DEB_REVISION := 1
++               DEBBUILD_DEB_FILE  = $(DEBBUILD_DEBS_DIR)/$(DEBBUILD_DEB_ARCH)/$(DEBBUILD_NAME)-$(PRODUCT_VERSION).$(PRODUCT_RELEASE)-$(DEB_REVISION).$(DEBBUILD_DEB_ARCH).deb
++               DEBBUILD_BUILDDIR  = $(OBJDIR)/debbuild
++                DEBBUILD_TMP_DIR  = $(DEBBUILD_BUILDDIR)
++                    DEBBUILD_LOG  = $(DEBBUILD_BUILDDIR)/debbuild.log
++              DEBBUILD_BUILDROOT  = $(DEBBUILD_BUILDDIR)/$(DEBBUILD_NAME)-$(PRODUCT_VERSION).$(PRODUCT_RELEASE)-$(DEB_REVISION).$(DEBBUILD_DEB_ARCH)
++         DEBBUILD_SRC_CONTROLDIR  = $(SOURCE_BASE)/packaging/deb-oss
++      DEBBUILD_TARGET_CONTROLDIR  = $(DEBBUILD_BUILDROOT)/DEBIAN
++    DEBBUILD_TARGET_CONTROL_FILE  = $(DEBBUILD_TARGET_CONTROLDIR)/control
++            DEBBUILD_CONTROL_FILE = control
++                DEBBUILD_MD5_FILE = md5sums
++              DEBBUILD_PRERM_FILE = prerm
++            DEBBUILD_PREINST_FILE = 
++             DEBBUILD_POSTRM_FILE = postrm
++           DEBBUILD_POSTINST_FILE = postinst
++            DEBBUILD_CONTROL_DEPS = $(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_CONTROL_FILE) $(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_MD5_FILE) $(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_PRERM_FILE) $(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_POSTRM_FILE) $(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_POSTINST_FILE)
++
++
+  OVFBUILD_CONTROLLER_L_VCPU_CNT := 4
+ OVFBUILD_CONTROLLER_L_MEMORY_MB := 16384
+     OVFBUILD_CONTROLLER_L_FLAGS  = vcpu_count=$(OVFBUILD_CONTROLLER_L_VCPU_CNT) memory_mb=$(OVFBUILD_CONTROLLER_L_MEMORY_MB)
+@@ -957,6 +981,61 @@ clean:: clean-rpm
+ clobber::
+ 	$(ATSIGN)$(RM) -r $(RPMBUILD_RPMS_DIR)
+ 
++# DEB section
++#
++.PHONY: deb clean-deb 
++
++deb: $(DEBBUILD_DEB_FILE)
++
++$(DEBBUILD_DEB_FILE): $(DEBBUILD_CONTROL_DEPS)
++	@$(ECHO) "Building storageos Debian package (release $(PRODUCT_VERSION).$(PRODUCT_RELEASE))"
++	$(ATSIGN)$(RM)    $(@)
++	$(ATSIGN)$(RM) -r       $(DEBBUILD_BUILDDIR) 
++	$(ATSIGN)$(MKDIR) $(@D) $(DEBBUILD_BUILDDIR) $(DEBBUILD_TARGET_CONTROLDIR)
++	@$(ECHO) "Installing source files in $(DEBBUILD_BUILDROOT)..."
++	$(ATSIGN)$(MAKE) _install INSTALL_PREFIX="$(DEBBUILD_BUILDROOT)"
++	@$(ECHO) "Removing non debian directories and files..."
++	$(ATSIGN)$(RM) -r $(DEBBUILD_BUILDROOT)/etc/boot-ovfenv.conf $(DEBBUILD_BUILDROOT)/etc/nginx.conf
++	$(ATSIGN)$(RM) -r $(DEBBUILD_BUILDROOT)/etc/systemd
++	$(ATSIGN)$(RM) -r $(DEBBUILD_BUILDROOT)/etc/sysconfig/SuSE*
++	@$(ECHO) "Creating Debian init files.."
++	$(ATSIGN)$(MKDIR) $(DEBBUILD_BUILDROOT)/etc/init
++	$(ATSIGN)$(CP) 	$(SOURCE_BASE)/etc/init/nginx.conf $(DEBBUILD_BUILDROOT)/etc/init/
++	$(ATSIGN)for svc in api auth controller coordinator db geo geodb portal sa sys; do \
++		sed -e "s,@svcname@,$$svc,g" $(SOURCE_BASE)/etc/init/storageos-template.conf > $(DEBBUILD_BUILDROOT)/etc/init/storageos-$$svc.conf; \
++	done
++	@$(ECHO) "Creating $(DEBBUILD_TARGET_CONTROL_FILE).."
++	$(ATSIGN)$(MAKE) $(DEBBUILD_TARGET_CONTROL_FILE)
++	@$(ECHO) "Copying $(DEBBUILD_PRERM_FILE),$(DEBBUILD_POSTRM_FILE),$(DEBBUILD_POSTINST_FILE) files.."
++	$(ATSIGN)$(CP) 	$(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_PRERM_FILE) $(DEBBUILD_TARGET_CONTROLDIR)/
++	$(ATSIGN)$(CP) 	$(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_POSTRM_FILE) $(DEBBUILD_TARGET_CONTROLDIR)/
++	$(ATSIGN)$(CP) 	$(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_POSTINST_FILE) $(DEBBUILD_TARGET_CONTROLDIR)/
++	@$(ECHO) "Changing scripts with right bash, java home etc. env variables .."
++	$(ATSIGN)for dir in "opt/storageos/bin" "etc/genconfig.d" "etc/storageos/"; do \
++		sed -i 's/#!\/bin\/sh/#!\/bin\/bash/g' $(DEBBUILD_BUILDROOT)/$$dir/*; \
++		sed -i "s/^export JAVA_HOME=.*$$/export JAVA_HOME=\/usr\/lib\/jvm\/java-7-openjdk-amd64\/jre/g" $(DEBBUILD_BUILDROOT)/$$dir/*; \
++		sed -i "s/\/usr\/bin\/sed/\/bin\/sed/g" $(DEBBUILD_BUILDROOT)/$$dir/*; \
++	done
++	@$(ECHO) "Creating $(DEBBUILD_TARGET_CONTROLDIR)/$(DEBBUILD_MD5_FILE) file.."
++	$(ATSIGN)$(FIND) $(DEBBUILD_BUILDDIR) -type f ! -regex '.*.hg.*' ! -regex '.*?debian-binary.*' ! -regex '.*?DEBIAN.*' -printf '"'"$(DEBBUILD_BUILDDIR)/"'%P" ' | xargs md5sum | $(SED) -e "s#$(DEBBUILD_BUILDROOT)/##g" > $(DEBBUILD_TARGET_CONTROLDIR)/$(DEBBUILD_MD5_FILE)
++	@$(ECHO) "Building Debian Packaging using $(DEBBUILD) -b $(DEBBUILD_BUILDROOT) $(DEBBUILD_FLAGS).."
++	$(ATSIGN)dpkg-deb -b $(DEBBUILD_BUILDROOT) $(DEBBUILD_FLAGS) $(TEEOUT) $(DEBBUILD_LOG)
++	$(ATSIGN)$(MV) $(DEBBUILD_BUILDDIR)/$(notdir $@) $@
++	@[ -f "$(@)" ] || { echo "debbuild failed!"; exit 1 ; }
++	@echo "***"
++	@echo "*** $(DEBBUILD_NAME) DEB:"
++	@echo "***    $(@)"
++	@echo "***"
++
++$(DEBBUILD_TARGET_CONTROL_FILE): $(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_MD5_FILE)
++	$(ATSIGN)$(SED) -e "s#<<package>>#$(DEBBUILD_NAME)#g" \
++               -e "s#<<version>>#$(PRODUCT_VERSION).$(PRODUCT_RELEASE)-$(DEB_REVISION)#g" \
++               -e "s#<<architecture>>#$(DEBBUILD_DEB_ARCH_FORMATTED)#g" \
++               -e "s#<<description>>#$(DEBBUILD_NAME)-$(PRODUCT_VERSION).$(PRODUCT_RELEASE)-$(DEB_REVISION)#g" \
++	       $(DEBBUILD_SRC_CONTROLDIR)/$(DEBBUILD_CONTROL_FILE) > $(DEBBUILD_TARGET_CONTROL_FILE)
++
++deb-clean:
++	$(ATSIGN)$(RM) -r $(DEBBUILD_DEB_FILE) $(DEBBUILD_BUILDDIR)
+ 
+ # Handy hack
+ #
+@@ -972,3 +1051,4 @@ clobber::
+ 
+ # END $Rev: XXX $
+ 
++print-%  : ; @echo $* = $($*)
+diff --git a/packaging/deb-auto/deb-build-coprhd.sh b/packaging/deb-auto/deb-build-coprhd.sh
+new file mode 100755
+index 0000000..9f13c37
+--- /dev/null
++++ b/packaging/deb-auto/deb-build-coprhd.sh
+@@ -0,0 +1,85 @@
++#!/bin/bash
++
++JAVA8_ORACLE_INSTALLER=oracle-java8-installer
++JDK_PROFILE=/etc/profile.d/jdk.sh
++OVF_PROPS=/etc/ovfenv.properties
++NET_IF=eth0
++RC_STATUS=/etc/rc.status
++
++############### DO NOT CHANGE BELOW ######################
++# parse command line args
++while [[ $# > 1 ]]
++do
++  key="$1"
++
++  case $key in
++    -b|--build)
++        build="$2"
++        shift
++        ;;
++    -br|--branch)
++        branch="$2"
++        shift
++        ;;
++    -h|--proxy)
++        http_proxy_setting="$2"
++        shift
++        ;;
++    -p|--port)
++        http_proxy_port="$2"
++        shift
++        ;;
++    -s|--secure_proxy)
++        https_proxy_setting="$2"
++        shift
++        ;;
++    -t|--secure_port)
++        https_proxy_port="$2"
++        shift
++        ;;
++    -ip|--node_ip)
++		IP="$2"
++		shift
++        ;;
++    -vip|--virtual_ip)
++		VIP="$2"
++		shift
++        ;;
++    -gw|--gw_ip)
++		GW="$2"
++		shift
++        ;;
++	-count|--node_count)
++		COUNT="$2"
++		shift
++        ;;
++	-id|--node_id)
++		ID="$2"
++		shift
++        ;;
++    *)
++		# unknown option
++        ;;
++  esac
++  shift
++done
++
++if [[ -n "${http_proxy_setting}" || -n "${https_proxy_setting}" ]]; then
++#    export http_proxy="${http_proxy_setting}:${http_proxy_port}"
++#    export https_proxy="${https_proxy_setting}:${https_proxy_port}"
++    export JAVA_TOOL_OPTIONS="-Dhttp.proxyHost=${http_proxy_setting} -Dhttp.proxyPort=${http_proxy_port} -Dhttps.proxyHost=${https_proxy_setting} -Dhttps.proxyPort=${https_proxy_port}"
++fi
++
++if [[ -z "$build" || $build = "true" ||  ( -d /vagrant && ! -z $(ls /vagrant/*.deb 2> /dev/null) ) ]]; then
++    echo "Building CoprHD..."
++    cd /tmp
++    rm -r coprhd-controller
++    git clone https://review.coprhd.org/scm/ch/coprhd-controller.git
++    cd coprhd-controller
++    git apply ../coprhd-ubuntu.patch
++    make clobber BUILD_TYPE=oss deb
++    if [[ -d /vagrant ]]; then
++        cp -a build/DEBS/x86_64/storageos-*.deb /vagrant
++    fi
++    echo "Done..."
++fi
+diff --git a/packaging/deb-auto/deb-inst-coprhd.sh b/packaging/deb-auto/deb-inst-coprhd.sh
+new file mode 100755
+index 0000000..e0b578a
+--- /dev/null
++++ b/packaging/deb-auto/deb-inst-coprhd.sh
+@@ -0,0 +1,46 @@
++#!/bin/bash
++
++PKG_NAME=storageos
++############### DO NOT CHANGE BELOW ######################
++dpkg -r $PKG_NAME
++if [[ -d /vagrant ]]; then
++    dpkg -i /vagrant/storageos-*.deb
++elif [[ ! -z $(ls /tmp/coprhd-controller/build/DEBS/x86_64/storageos-*.deb 2> /dev/null) ]]; then
++    dpkg -i /tmp/coprhd-controller/build/DEBS/x86_64/storageos-*.deb
++fi
++
++#CoprHD Version
++sudo cat /opt/storageos/etc/product
++
++printf "Waiting for the CoprHD services to start..."
++SERVICES="nginx storageos-api storageos-auth storageos-controller storageos-coordinator storageos-db storageos-portal"
++TIMER=1
++INTERVAL=10
++while [[ 1 ]];
++do
++    if [ $TIMER -gt 300 ]; then
++        echo ""
++        echo "CoprHD Services did not start in a timely (300s) fashion!" >&2
++        echo "Services start may have been delayed or failed." >&2
++        if [[ -d /vagrant ]]; then
++            echo "Issue 'vagrant destroy' followed by 'vagrant up' to restart deplyoment." >&2
++        fi
++        exit 1
++    fi
++
++    success=1
++    for svc in nginx api auth controller coordinator db portal; do
++        [[ $svc != "nginx" ]] && svc="storageos-$svc"
++        status $svc | grep 'start/running'
++        [[ -z "$(status $svc | grep 'start/running')" ]] && success=0
++    done
++
++    if [[ "$success" = 1 ]]; then
++        echo "CoprHD services started successfully.."
++        exit 0
++    fi
++
++    printf "."
++    sleep $INTERVAL
++    let TIMER=TIMER+$INTERVAL
++done
+diff --git a/packaging/deb-auto/deb-inst-deps.sh b/packaging/deb-auto/deb-inst-deps.sh
+new file mode 100755
+index 0000000..4533c87
+--- /dev/null
++++ b/packaging/deb-auto/deb-inst-deps.sh
+@@ -0,0 +1,166 @@
++#!/bin/bash
++
++JAVA8_ORACLE_INSTALLER=oracle-java8-installer
++JDK_PROFILE=/etc/profile.d/jdk.sh
++OVF_PROPS=/etc/ovfenv.properties
++NET_IF=eth0
++RC_STATUS=/etc/rc.status
++
++############### DO NOT CHANGE BELOW ######################
++# parse command line args
++while [[ $# > 1 ]]
++do
++  key="$1"
++
++  case $key in
++    -b|--build)
++        build="$2"
++        shift
++        ;;
++    -h|--proxy)
++        http_proxy_setting="$2"
++        shift
++        ;;
++    -p|--port)
++        http_proxy_port="$2"
++        shift
++        ;;
++    -s|--secure_proxy)
++        https_proxy_setting="$2"
++        shift
++        ;;
++    -t|--secure_port)
++        https_proxy_port="$2"
++        shift
++        ;;
++    -ip|--node_ip)
++		IP="$2"
++		shift
++        ;;
++    -vip|--virtual_ip)
++		VIP="$2"
++		shift
++        ;;
++    -gw|--gw_ip)
++		GW="$2"
++		shift
++        ;;
++	-count|--node_count)
++		COUNT="$2"
++		shift
++        ;;
++	-id|--node_id)
++		ID="$2"
++		shift
++        ;;
++    *)
++		# unknown option
++        ;;
++  esac
++  shift
++done
++
++# Setup Swap space
++echo "Setting up swap space.."
++sudo fallocate -l 4G /mnt/4GB.swap
++sudo mkswap /mnt/4GB.swap
++sudo swapon /mnt/4GB.swap
++sudo chmod 600 /mnt/4GB.swap
++sudo sh -c 'echo /mnt/4GB.swap  none  swap  sw 0  0  >> /etc/fstab'
++
++echo "Uninstalling Java 8"
++sudo apt-get -y remove $JAVA8_ORACLE_INSTALLER
++
++# get rid of default java 8 environment variables
++if [[ -r $JDK_PROFILE && ! -z $(grep 'java-8' $JDK_PROFILE) ]]; then
++    sed -i 's/^\([^#]\)/#\1/' $JDK_PROFILE
++fi
++
++echo "Adding CoprHD user account..."
++sudo groupadd storageos
++sudo useradd -r -g storageos -d /opt/storageos -c "StorageOS" -s /bin/bash storageos
++# if vagrant, set the password, using $IP as a way to id if it is coming from vagrant or not
++if [[ ! -z "$IP" ]]; then
++	usermod -p '$6$pOMXvTiV$WBEcdq2hG94zzarZOyOezVl33DkGD9P/Xx.W16gCFXC7t9W..p8onZLgomp7l/0IdoeyzltuyfwVMmCeqmr57.' storageos
++fi
++
++# configure  /etc/ovfenv.properties if it doesn't exist
++if [[ ! -r  $OVF_PROPS ]]; then
++    echo "Configuring $OVF_PROPS..."
++    if [[ -z $IP ]]; then
++        addr=$(ifconfig eth0 | grep 'inet addr')
++        IP=$(echo "$addr" | cut -d: -f 2 | awk '{print $1;}')
++        MASK=$(echo "$addr" | cut -d: -f 4 | awk '{print $1;}')
++        GW=$(echo "$IP" | awk -F. '{printf "%d.%d.%d.1", $1,$2,$3;}')
++        loct=$(echo "$IP" | awk -F. '{print $4;}')
++        (( loct += 1 ))
++        VIP=$(echo "$IP" | awk -F. '{printf "%d.%d.%d", $1,$2,$3;}').$loct
++	else
++		MASK=255.255.255.0
++	fi
++	[[ -z "$ID" ]] && ID="vipr1"
++	[[ -z "$COUNT" ]] && COUNT=1
++
++    cat > $OVF_PROPS << EOS
++network_1_ipaddr6=::0
++network_1_ipaddr=$IP
++network_gateway6=::0
++network_gateway=$GW
++network_netmask=$MASK
++network_prefix_length=64
++network_vip6=::0
++network_vip=$VIP
++node_count=$COUNT
++node_id=$ID
++EOS
++    sudo chown 'storageos:storageos' $OVF_PROPS
++fi
++
++
++# configure /etc/rc.status file
++if [[ ! -r $RC_STATUS ]]; then
++    echo "Creating $RC_STATUS file.."
++    cat > $RC_STATUS << EOS
++#!/bin/bash
++function rc_reset {
++  /bin/true
++}
++function rc_failed {
++  /bin/true
++}
++function rc_status {
++  /bin/true
++}
++function rc_exit {
++  /bin/true
++}
++EOS
++    sudo chmod u+x $RC_STATUS
++    sudo chown 'storageos:storageos' $RC_STATUS
++fi
++
++# install all dependencies
++echo "Installing dependent packages..."
++sudo apt-get -y update && sudo apt-get -y dist-upgrade
++sudo apt-get -y install build-essential python-dev python-setuptools python-dev libssl-dev python-pip git-core python-tox git
++sudo apt-get -y install openjdk-7-jdk openjdk-7-jre openjdk-7-jre-headless sysfsutils rpm g++ keepalived sipcalc subversion sysstat libpcre3 libpcre3-dev libssl-dev
++#sudo update-alternatives --config java
++
++# install patched nginx
++dpkg -l nginx > /dev/null 2>&1
++if [[ $? != 0 ]]; then
++    echo "Installing patched nginx .."
++    mkdir /tmp/nginx
++    cd /tmp/nginx
++    wget 'http://nginx.org/download/nginx-1.6.2.tar.gz'
++    wget 'https://github.com/yaoweibin/nginx_upstream_check_module/archive/v0.3.0.tar.gz'
++    wget 'https://github.com/openresty/headers-more-nginx-module/archive/v0.25.tar.gz'
++    tar -xzvf nginx-1.6.2.tar.gz
++    tar -xzvf v0.3.0.tar.gz
++    tar -xzvf v0.25.tar.gz
++    cd nginx-1.6.2
++    patch -p1 < ../nginx_upstream_check_module-0.3.0/check_1.5.12+.patch
++    ./configure --add-module=../nginx_upstream_check_module-0.3.0 --add-module=../headers-more-nginx-module-0.25 --with-http_ssl_module --prefix=/usr --conf-path=/etc/nginx/nginx.conf
++    make
++    make install
++fi
+diff --git a/packaging/deb-oss/conffiles b/packaging/deb-oss/conffiles
+new file mode 100644
+index 0000000..e787098
+--- /dev/null
++++ b/packaging/deb-oss/conffiles
+@@ -0,0 +1,136 @@
++/etc/gentmpl
++/etc/patch-props.defaults
++/etc/genconfig
++/etc/getovfproperties
++/etc/init/nginx.conf
++/etc/init/storageos-api.conf
++/etc/init/storageos-auth.conf
++/etc/init/storageos-controller.conf
++/etc/init/storageos-coordinator.conf
++/etc/init/storageos-db.conf
++/etc/init/storageos-geo.conf
++/etc/init/storageos-geodb.conf
++/etc/init/storageos-portal.conf
++/etc/init/storageos-sa.conf
++/etc/init/storageos-sys.conf
++/etc/cron.hourly/cleanup_logs
++/etc/systool
++/etc/sysconfig/connectemc
++/etc/sysconfig/scripts/FWiptables-template
++/etc/sysconfig/ntp
++/etc/sysconfig/storageos
++/etc/config.defaults
++/etc/ovf-env.README
++/etc/.ovfenv.properties
++/etc/gatherheapdumps
++/etc/ipsectool
++/etc/genconfig.d/geo
++/etc/genconfig.d/password
++/etc/genconfig.d/ipsec
++/etc/genconfig.d/coordinator
++/etc/genconfig.d/controller
++/etc/genconfig.d/syssvc
++/etc/genconfig.d/api
++/etc/genconfig.d/security
++/etc/genconfig.d/db
++/etc/genconfig.d/portal
++/etc/genconfig.d/ssh_auth_key
++/etc/genconfig.d/ssl
++/etc/genconfig.d/geodb
++/etc/genconfig.d/genconfig-core
++/etc/genconfig.d/auth
++/etc/genconfig.d/boot.manifest
++/etc/genconfig.d/dbclient
++/etc/genconfig.d/ssh
++/etc/genconfig.d/nginx
++/etc/genconfig.d/test
++/etc/powerofftool
++/etc/keepalived/keepalived-IPv6-template.conf
++/etc/keepalived/keepalived-IPv4-template.conf
++/etc/keepalived/keepalived-dual-template.conf
++/etc/getplatform
++/etc/logrotate.d/storageserver
++/etc/sudoers.d/storageos
++/etc/storageos/syncntp
++/etc/storageos/boot-ovfenv
++/etc/storageos/ipchecktool
++/etc/storageos/installer
++/etc/storageos/storageos
++/etc/nginx/nginx-IPv6-template.conf
++/etc/nginx/api-error.conf
++/etc/nginx/error/xml/497.xml
++/etc/nginx/error/xml/406.xml
++/etc/nginx/error/xml/401.xml
++/etc/nginx/error/xml/415.xml
++/etc/nginx/error/xml/507.xml
++/etc/nginx/error/xml/404.xml
++/etc/nginx/error/xml/495.xml
++/etc/nginx/error/xml/500.xml
++/etc/nginx/error/xml/411.xml
++/etc/nginx/error/xml/405.xml
++/etc/nginx/error/xml/501.xml
++/etc/nginx/error/xml/409.xml
++/etc/nginx/error/xml/416.xml
++/etc/nginx/error/xml/402.xml
++/etc/nginx/error/xml/400.xml
++/etc/nginx/error/xml/413.xml
++/etc/nginx/error/xml/494.xml
++/etc/nginx/error/xml/496.xml
++/etc/nginx/error/xml/414.xml
++/etc/nginx/error/xml/412.xml
++/etc/nginx/error/xml/410.xml
++/etc/nginx/error/xml/503.xml
++/etc/nginx/error/html/409.html
++/etc/nginx/error/html/405.html
++/etc/nginx/error/html/501.html
++/etc/nginx/error/html/503.html
++/etc/nginx/error/html/411.html
++/etc/nginx/error/html/413.html
++/etc/nginx/error/html/495.html
++/etc/nginx/error/html/414.html
++/etc/nginx/error/html/497.html
++/etc/nginx/error/html/507.html
++/etc/nginx/error/html/496.html
++/etc/nginx/error/html/415.html
++/etc/nginx/error/html/404.html
++/etc/nginx/error/html/494.html
++/etc/nginx/error/html/400.html
++/etc/nginx/error/html/412.html
++/etc/nginx/error/html/500.html
++/etc/nginx/error/html/402.html
++/etc/nginx/error/html/410.html
++/etc/nginx/error/html/406.html
++/etc/nginx/error/html/401.html
++/etc/nginx/error/html/416.html
++/etc/nginx/error/json/413.json
++/etc/nginx/error/json/497.json
++/etc/nginx/error/json/507.json
++/etc/nginx/error/json/495.json
++/etc/nginx/error/json/500.json
++/etc/nginx/error/json/416.json
++/etc/nginx/error/json/400.json
++/etc/nginx/error/json/409.json
++/etc/nginx/error/json/406.json
++/etc/nginx/error/json/496.json
++/etc/nginx/error/json/415.json
++/etc/nginx/error/json/503.json
++/etc/nginx/error/json/402.json
++/etc/nginx/error/json/411.json
++/etc/nginx/error/json/401.json
++/etc/nginx/error/json/404.json
++/etc/nginx/error/json/494.json
++/etc/nginx/error/json/412.json
++/etc/nginx/error/json/501.json
++/etc/nginx/error/json/414.json
++/etc/nginx/error/json/405.json
++/etc/nginx/error/json/410.json
++/etc/nginx/upstream.conf
++/etc/nginx/nginx.wrapper
++/etc/nginx/nginx-dual-template.conf
++/etc/nginx/upstream-template.conf
++/etc/nginx/nginx-IPv4-template.conf
++/etc/nginx/locations.conf
++/etc/nginx/portal-error.conf
++/etc/getnic
++/etc/.iterable.properties
++/etc/diagtool
+diff --git a/packaging/deb-oss/control b/packaging/deb-oss/control
+new file mode 100644
+index 0000000..883e5f5
+--- /dev/null
++++ b/packaging/deb-oss/control
+@@ -0,0 +1,8 @@
++Package: <<package>>
++Version: <<version>>
++Architecture: <<architecture>>
++Maintainer: root <root@coprhdu>
++Section: alien
++Priority: extra
++Description: <<description>>
++ ViPR services
+diff --git a/packaging/deb-oss/md5sums b/packaging/deb-oss/md5sums
+new file mode 100644
+index 0000000..e69de29
+diff --git a/packaging/deb-oss/postinst b/packaging/deb-oss/postinst
+new file mode 100755
+index 0000000..3768be6
+--- /dev/null
++++ b/packaging/deb-oss/postinst
+@@ -0,0 +1,23 @@
++#!/bin/bash
++# alien added permissions fixup code
++chown 'storageos:storageos' '/data/db'
++chown 'storageos:storageos' '/data/geodb'
++chown 'storageos:storageos' '/data/zk'
++chown 'storageos:storageos' '/etc/.iterable.properties'
++chown 'storageos:storageos' '/etc/.ovfenv.properties'
++chown 'storageos:storageos' '/etc/config.defaults'
++chown 'storageos:storageos' '/object/rmt'
++chown -R 'storageos:storageos' '/opt/storageos'
++chown -R 'storageos:storageos' '/var/run/storageos'
++chmod 500 /etc/nginx/nginx.wrapper
++
++/sbin/ldconfig /opt/storageos/lib
++/etc/storageos/storageos enable
++    
++if [ -z "${DO_NOT_START}" ] ; then
++    /etc/storageos/boot-ovfenv start
++    service keepalived start
++    start nginx
++    /etc/storageos/storageos start
++fi
++exit 0
+diff --git a/packaging/deb-oss/postrm b/packaging/deb-oss/postrm
+new file mode 100755
+index 0000000..8e42fed
+--- /dev/null
++++ b/packaging/deb-oss/postrm
+@@ -0,0 +1,8 @@
++#!/bin/bash
++/sbin/ldconfig
++#rm -rf /opt/storageos/lib
++#rm -rf /opt/storageos/bin
++#rm -rf /opt/storageos/pylib
++rm -rf /opt/storageos
++rm -rf /etc/init/storageos-*.override
++exit 0
+diff --git a/packaging/deb-oss/prerm b/packaging/deb-oss/prerm
+new file mode 100755
+index 0000000..48c3e8c
+--- /dev/null
++++ b/packaging/deb-oss/prerm
+@@ -0,0 +1,16 @@
++#!/bin/bash
++if [ -f /etc/storageos/storageos ] ; then
++  /etc/storageos/storageos stop
++  /etc/storageos/storageos disable
++fi
++
++service keepalived stop
++stop nginx
++
++#stop boot-ovfenv
++#disable boot-ovfenv
++#disable nginx
++#stop syncntp
++#disable syncntp
++#disable keepalived
++exit 0
