@@ -35,7 +35,7 @@ do
         [[ -z "$(status $svc | grep 'start/running')" ]] && success=0
     done
 
-    if [[ "$success" = 1 ]]; then
+    if [[ "$success" == 1 ]]; then
         echo "CoprHD services started successfully.."
         exit 0
     fi

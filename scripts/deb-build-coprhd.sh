@@ -65,8 +65,6 @@ do
 done
 
 if [[ -n "${http_proxy_setting}" || -n "${https_proxy_setting}" ]]; then
-#    export http_proxy="${http_proxy_setting}:${http_proxy_port}"
-#    export https_proxy="${https_proxy_setting}:${https_proxy_port}"
     export JAVA_TOOL_OPTIONS="-Dhttp.proxyHost=${http_proxy_setting} -Dhttp.proxyPort=${http_proxy_port} -Dhttps.proxyHost=${https_proxy_setting} -Dhttps.proxyPort=${https_proxy_port}"
 fi
 
@@ -78,7 +76,11 @@ if [[ -z "$build" || $build = "true" ||  ( -d /vagrant && ! -z $(ls /vagrant/*.d
     cd coprhd-controller
     git apply ../coprhd-ubuntu.patch
     make clobber BUILD_TYPE=oss deb
+    if [[ $? -ne 0 ]]; then
+       exit -1
+    fi
     if [[ -d /vagrant ]]; then
+        rm /vagrant/storageos-*.deb
         cp -a build/DEBS/x86_64/storageos-*.deb /vagrant
     fi
     echo "Done..."

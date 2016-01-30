@@ -287,7 +287,7 @@ index 4295942..8e94c04 100755
  
 -    /etc/storageos/ipchecktool --panic
 +	
-+	# this is really not needed for single machine, development environmets 
++	# this is really not needed for single machine, development environments
 +    [[ "$DISTRO" != "debian" ]] && /etc/storageos/ipchecktool --panic
 +
      echo -n "Starting @product_brand@ ${STORAGEOS_VARIANT} services "

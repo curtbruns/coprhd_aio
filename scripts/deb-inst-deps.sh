@@ -68,13 +68,20 @@ sudo swapon /mnt/4GB.swap
 sudo chmod 600 /mnt/4GB.swap
 sudo sh -c 'echo /mnt/4GB.swap  none  swap  sw 0  0  >> /etc/fstab'
 
-echo "Uninstalling Java 8"
+echo "Uninstalling Oracle Java 8"
 sudo apt-get -y remove $JAVA8_ORACLE_INSTALLER
 
 # get rid of default java 8 environment variables
 if [[ -r $JDK_PROFILE && ! -z $(grep 'java-8' $JDK_PROFILE) ]]; then
     sed -i 's/^\([^#]\)/#\1/' $JDK_PROFILE
 fi
+
+echo "Installing OpenJDK8"
+add-apt-repository -y ppa:openjdk-r/ppa
+apt-get -y update
+apt-get -y install openjdk-8-jdk
+update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+update-alternatives --set javac /usr/lib/jvm/java-8-openjdk-amd64/bin/javac
 
 echo "Adding CoprHD user account..."
 sudo groupadd storageos
