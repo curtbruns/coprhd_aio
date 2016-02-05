@@ -4,7 +4,7 @@
 
 ########################################################
 #
-# Global Settings for ScaleIO, CoprHD, and DevStack
+# Global Settings for ScaleIO, CoprHD
 #
 ########################################################
 network = "192.168.100"
@@ -17,17 +17,18 @@ if ENV["http_proxy"] || ENV["https_proxy"]
   if !(Vagrant.has_plugin?("vagrant-proxyconf"))
     raise StandardError, "Env Proxy set but vagrant-proxyconf not installed. Fix with: vagrant plugin install vagrant-proxyconf"
   end
-  # Remove http and https from proxy setting
-  temp = ENV["http_proxy"].dup
-  temp.slice! "http://"
-  http_proxy, http_proxy_port = temp.split(":")
-  script_proxy_args += " --proxy #{http_proxy} --port #{http_proxy_port}"
+   # Remove http and https from proxy setting
+   temp = ENV["http_proxy"].dup
+   temp.slice! "http://"
+   http_proxy, http_proxy_port = temp.split(":")
+   script_proxy_args = " --proxy #{http_proxy} --port #{http_proxy_port}"
 
-  temp = ENV["https_proxy"].dup
-  # Some proxies use http or https as secure proxy, handle both
-  temp =~ /https*:\/\/(.*)/
-  https_proxy, https_proxy_port = $1.split(":")
-  script_proxy_args += " --secure_proxy #{https_proxy} --secure_port #{https_proxy_port}"
+   # Some proxies use http or https as secure proxy, handle both
+   temp = ENV["https_proxy"].dup
+   temp =~ /https*:\/\/(.*)/
+   https_proxy, https_proxy_port = $1.split(":")
+   script_proxy_args += " --secure_proxy #{https_proxy} --secure_port #{https_proxy_port}"
+   script_proxy_args += " --secure_proxy #{https_proxy} --secure_port #{https_proxy_port}"
 end
 
 ########################################################
@@ -42,7 +43,6 @@ ds_vagrantbox = "ubuntu/trusty64"
 ds_vagrantbox_url = "https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/20160120.0.1/providers/virtualbox.box"
 # Allowed values for ds_release: kilo or liberty
 ds_release = "kilo"
-
 
 ########################################################
 #
@@ -310,7 +310,7 @@ Vagrant.configure("2") do |config|
      # Grab CoprHD CLI Scripts and Patch Auth Module
      coprhd.vm.provision "shell" do |s|
       s.path = "scripts/coprhd_cli.sh"
-      s.args = "-u http://#{ds_node_ip}:5000/v2.0 -p nomoresecrete -s #{smis_simulator}"
+      s.args = "-s #{smis_simulator}"
      end
 
      coprhd.vm.provision "shell" do |s|
