@@ -42,7 +42,7 @@ ch_gw_ip = "#{network}.1"
 ch_vagrantbox = "vchrisb/openSUSE-13.2_64"
 ch_vagrantboxurl = "https://atlas.hashicorp.com/vchrisb/boxes/openSUSE-13.2_64/versions/0.1.3/providers/virtualbox.box"
 build = true
-smis_simulator = false
+smis_simulator = true
 
 ########################################################
 #

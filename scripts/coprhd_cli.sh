@@ -96,6 +96,12 @@ if [ "$simulator" = true ]; then
      wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/smis-simulator.zip?version=2&modificationDate=1444855261258&api=v2' -O /vagrant/smis_simulator.zip
   fi
   unzip /vagrant/smis_simulator.zip -d /opt/storageos/
+  # Only simulate VNX Block
+  cd /opt/storageos/ecom/providers
+  sed -i 's/^VERSION=80/#VERSION=80/' OSLSProvider.conf
+  sed -i 's/^#VERSION=462/VERSION=462/' OSLSProvider.conf
+  sed -i 's/ADD_V2_SYMM=yes/ADD_V2_SYMM=no/' OSLSProvider.conf
+  # Start ECOM (SMI-S Backend Simulator)
   cd /opt/storageos/ecom/bin
   chmod +x  ECOM
   chmod +x  system/ECOM
