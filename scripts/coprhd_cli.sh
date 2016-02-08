@@ -94,7 +94,9 @@ if [ "$simulator" = true ]; then
   # Download to /vagrant directory if needed
   if [ ! -e /vagrant/smis_simulator.zip ]; then
      wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/smis-simulator.zip?version=2&modificationDate=1444855261258&api=v2' -O /vagrant/smis_simulator.zip
+    wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/cisco-sim.zip?version=4&modificationDate=1453406325249&api=v2 -O /vagrant/cisco_sim.zip'
   fi
+  # Install SMIS
   unzip /vagrant/smis_simulator.zip -d /opt/storageos/
   cd /opt/storageos/ecom/bin
   chmod +x  ECOM
@@ -109,4 +111,15 @@ if [ "$simulator" = true ]; then
     printf "."
     sleep $INTERVAL
   done
+  # Install Cisco Sim
+  mkdir /simulator
+  mv /vagrant/cisco_sim.zip /simulator
+  cd /simulator
+  unzip cisco_sim.zip
+  cd cisco-sim
+  cp bashrc ~/.bashrc 
+  # Update Config files for correct directory
+  sed -i 's/CISCO_SIM_HOME=\/cisco-sim/CISCO_SIM_HOME=\/simulator\/cisco-sim/' ~/.bashrc
+  sed -i 's/chmod -R 777 \/cisco-sim/chmod -R 777 \/simulator\/cisco-sim/' ~/.bashrc
+  sed -i 's#args=\(\'\/cisco-sim/args=\(\'\/simulator\/cisco-sim/# /simulator/cisco-sim/config/logging.conf
 fi
