@@ -42,7 +42,12 @@ ch_gw_ip = "#{network}.1"
 ch_vagrantbox = "vchrisb/openSUSE-13.2_64"
 ch_vagrantboxurl = "https://atlas.hashicorp.com/vchrisb/boxes/openSUSE-13.2_64/versions/0.1.3/providers/virtualbox.box"
 build = true
-smis_simulator = true
+
+# Simulated Backend - set to true to get VNX/VMAX Simulated Backends
+smis_simulator = false
+
+# All Simulators - set to true for Sanity Testing (will include smis_simulator)
+all_simulators = true
 
 ########################################################
 #
@@ -188,7 +193,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "coprhd" do |coprhd|
      coprhd.vm.box = "#{ch_vagrantbox}"
      coprhd.vm.box_url = "#{ch_vagrantboxurl}"
-     coprhd.vm.host_name = "coprhd1.#{domain}"
+     coprhd.vm.host_name = "coprhd1"
      coprhd.vm.network "private_network", ip: "#{ch_node_ip}"
 
      # configure virtualbox provider
@@ -244,7 +249,7 @@ Vagrant.configure("2") do |config|
      # Grab CoprHD CLI Scripts and Patch Auth Module
      coprhd.vm.provision "shell" do |s|
       s.path = "scripts/coprhd_cli.sh"
-      s.args = "-s #{smis_simulator}"
+      s.args = "-s #{smis_simulator} -a #{all_simulators} --node_ip #{ch_node_ip}"
      end
 
      coprhd.vm.provision "shell" do |s|
