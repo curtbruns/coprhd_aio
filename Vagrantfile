@@ -215,22 +215,10 @@ Vagrant.configure("2") do |config|
       s.args   = "--build #{build}"
      end
 
-     # download, patch and build nginx
-     coprhd.vm.provision "shell" do |s|
-      s.path = "scripts/nginx.sh"
-      s.args = ""
-     end
-
-     # create CoprHD configuration file
-     coprhd.vm.provision "shell" do |s|
-      s.path = "scripts/config.sh"
-      s.args   = "--node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1"
-     end
-
      # download and compile CoprHD from sources
      coprhd.vm.provision "shell" do |s|
       s.path = "scripts/build.sh"
-      s.args   = "--build #{build}"
+      s.args = "--build #{build} --node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1"
       s.args  += script_proxy_args
      end
 
@@ -256,6 +244,8 @@ Vagrant.configure("2") do |config|
       s.path = "scripts/banner.sh"
       s.args   = "--virtual_ip #{ch_virtual_ip}"
      end
+
+     config.vm.provision "shell", inline: "service network restart", run: "always"
 
   end
 end
