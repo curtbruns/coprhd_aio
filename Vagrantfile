@@ -47,7 +47,7 @@ build = true
 smis_simulator = false
 
 # All Simulators - set to true for Sanity Testing (will include smis_simulator)
-all_simulators = true
+all_simulators = false
 
 ########################################################
 #
