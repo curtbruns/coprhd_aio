@@ -9,6 +9,7 @@ Vagrantfile was based off of Jonas' original work as well.
 
 DevStack and combining all to single Vagrant Environment provided by:
 Curt Bruns https://github.com/curtbruns
+Copyright (c) 2016 Curt Bruns
 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

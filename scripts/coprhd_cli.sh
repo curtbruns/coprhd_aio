@@ -59,8 +59,7 @@ zypper -n install git python-pip
 
 # Change storageos password to 'vagrant'
 chmod 600 /etc/shadow
-usermod -p '$6$pOMXvTiV$WBEcdq2hG94zzarZOyOezVl33DkGD9P/Xx.W16gCFXC7t9W..p8onZLgomp7l/0Idoeyzltuyf
-wVMmCeqmr57.' storageos
+usermod -p '$6$pOMXvTiV$WBEcdq2hG94zzarZOyOezVl33DkGD9P/Xx.W16gCFXC7t9W..p8onZLgomp7l/0IdoeyzltuyfwVMmCeqmr57.' storageos
 
 # Grab the CoprHD CLI Setup/Teardown scripts
 cd /opt/storageos
