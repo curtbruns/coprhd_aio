@@ -245,7 +245,7 @@ Vagrant.configure("2") do |config|
       s.args   = "--virtual_ip #{ch_virtual_ip}"
      end
 
-     config.vm.provision "shell", inline: "service network restart", run: "always"
+     coprhd.vm.provision "shell", inline: "service network restart", run: "always"
 
   end
 end
