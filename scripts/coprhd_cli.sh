@@ -57,19 +57,24 @@ patch -p3 < /home/vagrant/patch_auth.txt
 # Make sure git and pip are installed
 zypper -n install git python-pip
 
+# Change storageos password to 'vagrant'
+chmod 600 /etc/shadow
+usermod -p '$6$pOMXvTiV$WBEcdq2hG94zzarZOyOezVl33DkGD9P/Xx.W16gCFXC7t9W..p8onZLgomp7l/0IdoeyzltuyfwVMmCeqmr57.' storageos
+
 # Grab the CoprHD CLI Setup/Teardown scripts
 cd /opt/storageos
 git clone https://github.com/curtbruns/coprhd_cli_scripts.git
 chown -R storageos /opt/storageos/coprhd_cli_scripts
-
 # Pip with certain proxies still causing issue - just
 # use easy_install in that case
 if [[ -z $http_proxy ]]; then
 pip install python-openstackclient
 pip install pexpect
+pip install python-cjson
 else
 easy_install python-openstackclient
 easy_install pexpect
+easy_install python-cjson
 fi
 
 # Create the Keystone Authentication config file

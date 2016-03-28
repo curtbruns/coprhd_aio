@@ -38,7 +38,8 @@ end
 ########################################################
 ds_node_ip = "#{network}.5"
 ds_flat_if = "eth1"
-ds_range   = "#{network}.224/28"
+ds_floating_range   = "#{network}.224/28"
+ds_fixed_range   = "172.24.4.0/24"
 ds_vagrantbox = "ubuntu/trusty64"
 ds_vagrantbox_url = "https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/20160120.0.1/providers/virtualbox.box"
 # Allowed values for ds_release: kilo or liberty
@@ -60,7 +61,7 @@ build = true
 smis_simulator = false
 
 # All Simulators - set to true for Sanity Testing (will include smis_simulator)
-all_simulators = true
+all_simulators = false
 
 ########################################################
 #
@@ -241,7 +242,7 @@ Vagrant.configure("2") do |config|
       # Setup /home/vagrant/devstack/local.conf
       devstack.vm.provision "shell" do |s|
        s.path = "scripts/local_conf.sh"
-       s.args = "--ip #{ds_node_ip} --flat #{ds_flat_if} --range #{ds_range} --release #{ds_release}"
+       s.args = "--ip #{ds_node_ip} --flat #{ds_flat_if} --range #{ds_floating_range} --fixed #{ds_fixed_range} --release #{ds_release}"
       end
 
       # START DEVSTACK on "up" or "reload" - Set OFFLINE True after stacking
@@ -281,22 +282,10 @@ Vagrant.configure("2") do |config|
       s.args   = "--build #{build}"
      end
 
-     # download, patch and build nginx
-     coprhd.vm.provision "shell" do |s|
-      s.path = "scripts/nginx.sh"
-      s.args = ""
-     end
-
-     # create CoprHD configuration file
-     coprhd.vm.provision "shell" do |s|
-      s.path = "scripts/config.sh"
-      s.args   = "--node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1"
-     end
-
      # download and compile CoprHD from sources
      coprhd.vm.provision "shell" do |s|
       s.path = "scripts/build.sh"
-      s.args   = "--build #{build}"
+      s.args = "--build #{build} --node_ip #{ch_node_ip} --virtual_ip #{ch_virtual_ip} --gw_ip #{ch_gw_ip} --node_count 1 --node_id vipr1"
       s.args  += script_proxy_args
      end
 
@@ -322,6 +311,8 @@ Vagrant.configure("2") do |config|
       s.path = "scripts/banner.sh"
       s.args   = "--virtual_ip #{ch_virtual_ip}"
      end
+
+     coprhd.vm.provision "shell", inline: "service network restart", run: "always"
 
   end
 end

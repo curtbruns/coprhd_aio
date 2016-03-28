@@ -3,11 +3,11 @@ vagrant-coprhd-scaleio-devstack
 
 # Description
 ## Three Branches: 
-1. master (4 VMs: ScaleIO (3) + CoprHD on OpenSUSE (1))
-2. feature-add-ubuntu: (4 VMs: ScaleIO (3) + CoprHD on Ubuntu 14.04(1))
-3. devstack-integration (5 VMs: same as master + Kilo Devstack (1))
-
-### Modify the Vagrantfile as needed to configure the network, passwords, etc for your desired setup.
+### master (4 VMs: ScaleIO (3) + CoprHD on OpenSUSE (1))
+### feature-add-ubuntu: (4 VMs: ScaleIO (3) + CoprHD on Ubuntu 14.04(1))
+### devstack-integration (5 VMs: same as master + Kilo Devstack (1))
+Master branch includes: Vagrant environment for 3 ScaleIO VMs and 1 CoprHD VM
+Devstack-integration branch includes: Master branch VMs + Kilo-based DevStack VM.  Modify the Vagrantfile as needed to configure the network, passwords, etc for your desired setup.
 
 # Prerequisites
 * vagrant

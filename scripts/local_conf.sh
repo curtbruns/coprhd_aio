@@ -20,6 +20,10 @@ do
     RANGE="$2"
     shift
     ;;
+    -x|--fixed)
+    FIXED="$2"
+    shift
+    ;;
     *)
     # unknown option
     ;;
@@ -43,6 +47,7 @@ SERVICE_PASSWORD=nomoresecrete
 HOST_IP=$IP
 FLAT_INTERFACE=$FLAT
 FLOATING_RANGE=$RANGE
+FIXED_RANGE=$FIXED
 
 
 # Offline can be set to true after first stack'ing

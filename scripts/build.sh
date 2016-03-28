@@ -23,6 +23,26 @@ do
       https_proxy_port="$2"
       shift
       ;;
+    -ip|--node_ip)
+    IP="$2"
+    shift
+    ;;
+    -vip|--virtual_ip)
+    VIP="$2"
+    shift
+    ;;
+    -gw|--gw_ip)
+    GW="$2"
+    shift
+    ;;
+    -count|--node_count)
+    COUNT="$2"
+    shift
+    ;;
+    -id|--node_id)
+    ID="$2"
+    shift
+    ;;
     *)
       # unknown option
       ;;
@@ -31,21 +51,37 @@ do
 done
 
 if [[ -n "${http_proxy_setting}" || -n "${https_proxy_setting}" ]]; then
-#    export http_proxy="${http_proxy_setting}:${http_proxy_port}"
-#    export https_proxy="${https_proxy_setting}:${https_proxy_port}"
     export JAVA_TOOL_OPTIONS="-Dhttp.proxyHost=${http_proxy_setting} -Dhttp.proxyPort=${http_proxy_port} -Dhttps.proxyHost=${https_proxy_setting} -Dhttps.proxyPort=${https_proxy_port}"
-
 fi
 
 if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
-  # build CoprHD
+  # Download CoprHD Source
   cd /tmp
-  git clone https://github.com/CoprHD/coprhd-controller.git
-  cd coprhd-controller
-  # Change to Feature Branch
-  git checkout -b feature-keystone-auto-reg origin/feature-keystone-auto-reg
+  git clone https://review.coprhd.org/scm/ch/coprhd-controller.git
+  # Get Required Packages
+  bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installRepositories
+  bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installPackages
+  bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installNginx
+  zypper --non-interactive --no-gpg-checks install --details --no-recommends --force-resolution java-1_8_0-openjdk java-1_8_0-openjdk-devel
+  bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installJava 8
+  bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installStorageOS
+  bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installNetworkConfigurationFile
 
+  # Create ovfenv file
+  cat > /etc/ovfenv.properties << EOF
+network_1_ipaddr6=::0
+network_1_ipaddr=$IP
+network_gateway6=::0
+network_gateway=$GW
+network_netmask=255.255.255.0
+network_prefix_length=64
+network_vip6=::0
+network_vip=$VIP
+node_count=$COUNT
+node_id=$ID
+EOF
+  cd coprhd-controller
   make clobber BUILD_TYPE=oss rpm
-  rm -rf /vagrant/*.rpm
+  rm -f /vagrant/storageos*.rpm
   cp -a /tmp/coprhd-controller/build/RPMS/x86_64/storageos-*.x86_64.rpm /vagrant
 fi
