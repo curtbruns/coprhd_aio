@@ -39,9 +39,9 @@ end
 ch_node_ip = "#{network}.11"
 ch_virtual_ip = "#{network}.10"
 ch_gw_ip = "#{network}.1"
+build = true
 ch_vagrantbox = "vchrisb/openSUSE-13.2_64"
 ch_vagrantboxurl = "https://atlas.hashicorp.com/vchrisb/boxes/openSUSE-13.2_64/versions/0.1.3/providers/virtualbox.box"
-build = true
 
 # Simulated Backend - set to true to get VNX/VMAX Simulated Backends
 smis_simulator = false
@@ -214,7 +214,6 @@ Vagrant.configure("2") do |config|
       s.path = "scripts/packages.sh"
       s.args   = "--build #{build}"
      end
-
      # download and compile CoprHD from sources
      coprhd.vm.provision "shell" do |s|
       s.path = "scripts/build.sh"
@@ -223,6 +222,7 @@ Vagrant.configure("2") do |config|
      end
 
       # Setup ntpdate crontab
+      coprhd.vm.provision "shell", inline: "zypper -n install cron"
       coprhd.vm.provision "shell" do |s|
         s.path = "scripts/crontab.sh"
         s.privileged = false
@@ -246,6 +246,7 @@ Vagrant.configure("2") do |config|
      end
 
      coprhd.vm.provision "shell", inline: "service network restart", run: "always"
+     coprhd.vm.provision "shell", inline: "service sshd restart", run: "always"
 
   end
 end

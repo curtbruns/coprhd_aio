@@ -62,7 +62,6 @@ if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installRepositories
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installPackages
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installNginx
-  zypper --non-interactive --no-gpg-checks install --details --no-recommends --force-resolution java-1_8_0-openjdk java-1_8_0-openjdk-devel
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installJava 8
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installStorageOS
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installNetworkConfigurationFile
