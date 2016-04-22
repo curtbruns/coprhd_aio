@@ -79,6 +79,9 @@ network_vip=$VIP
 node_count=$COUNT
 node_id=$ID
 EOF
+  # Revert systemd for working version
+  echo "Reverting Systemd to working version"
+  zypper -n install --oldpackage systemd-210-25.5.4.x86_64 systemd-sysvinit-210-25.5.4.x86_64 systemd-210-25.5.4.x86_64 systemd-bash-completion-210-25.5.4.noarch
   cd coprhd-controller
   make clobber BUILD_TYPE=oss rpm
   rm -f /vagrant/storageos*.rpm
