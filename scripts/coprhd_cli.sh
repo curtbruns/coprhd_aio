@@ -55,7 +55,7 @@ cd /opt/storageos/cli/bin
 patch -p3 < /home/vagrant/patch_auth.txt
 
 # Make sure git and pip are installed
-zypper -n install git python-pip
+zypper -n install git python-pip python-openstackclient python-pexpect python-cjson
 
 # Change storageos password to 'vagrant'
 chmod 600 /etc/shadow
@@ -65,17 +65,6 @@ usermod -p '$6$pOMXvTiV$WBEcdq2hG94zzarZOyOezVl33DkGD9P/Xx.W16gCFXC7t9W..p8onZLg
 cd /opt/storageos
 git clone https://github.com/curtbruns/coprhd_cli_scripts.git
 chown -R storageos /opt/storageos/coprhd_cli_scripts
-# Pip with certain proxies still causing issue - just
-# use easy_install in that case
-if [[ -z $http_proxy ]]; then
-pip install python-openstackclient
-pip install pexpect
-pip install python-cjson
-else
-easy_install python-openstackclient
-easy_install pexpect
-easy_install python-cjson
-fi
 
 # Create the Keystone Authentication config file
 cd coprhd_cli_scripts/
@@ -108,7 +97,7 @@ SIMULATOR_VERSION="smis-simulators-1.0.0.0.1455598800.zip"
 if [ "$simulator" = true ] || [ "$all_simulators" = true ]; then
   # Download to /vagrant directory if needed
   if [ ! -e /vagrant/$SIMULATOR_VERSION ]; then
-     wget "https://coprhd.atlassian.net/wiki/download/attachments/6652057/$SIMULATOR_VERSION?version=1&modificationDate=1455833007237&api=v2" -O "/vagrant/$SIMULATOR_VERSION"
+     wget "https://build.coprhd.org/jenkins/userContent/simulators/smis-sim/1.0.0.0.1455598800/smis-simulators-1.0.0.0.1455598800.zip" -O "/vagrant/$SIMULATOR_VERSION"
   fi
   # Install SMIS
   unzip /vagrant/$SIMULATOR_VERSION -d /opt/storageos/
@@ -135,7 +124,7 @@ if [ "$all_simulators" = true ]; then
   echo "Installing all Simulators"
   # First Cisco Simulator
   mkdir /simulator
-  wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/cisco-sim.zip?version=4&modificationDate=1453406325249&api=v2' -O /simulator/cisco_sim.zip
+  wget 'https://build.coprhd.org/jenkins/userContent/simulators/cisco-sim/1.0.0.0.1453093200/cisco-simulators-1.0.0.0.1453093200.zip' -O /simulator/cisco_sim.zip
   cd /simulator
   unzip cisco_sim.zip
   cd cisco-sim
@@ -150,7 +139,7 @@ if [ "$all_simulators" = true ]; then
   service sshd restart
 
   # Second, LDAP Simulator
-  wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/ldapsvc-1.0.0.zip?version=2&modificationDate=1453406325338&api=v2' -O /simulator/ldap.zip
+  wget 'https://build.coprhd.org/jenkins/userContent/simulators/ldap-sim/1.0.0.0.7/ldap-simulators-1.0.0.0.7-bin.zip' -O /simulator/ldap.zip
   cd /simulator
   unzip ldap.zip
   cd /simulator/ldapsvc-1.0.0/bin/
@@ -160,7 +149,7 @@ if [ "$all_simulators" = true ]; then
   curl -X POST -H "Content-Type: application/json" -d "{\"listener_name\": \"COPRHDLDAPSanity\"}" http://${coprhd_ip}:8082/ldap-service/start
 
   # Third, Windows Host Simulator
-  wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/win-sim.zip?version=3&modificationDate=1453406324934&api=v2' -O /simulator/win_host.zip
+  wget 'https://build.coprhd.org/jenkins/userContent/simulators/win-sim/1.0.0.0.1442808000/win-simulators-1.0.0.0.1442808000.zip' -O /simulator/win_host.zip
   cd /simulator
   unzip win_host.zip
   cd win-sim
@@ -171,14 +160,13 @@ if [ "$all_simulators" = true ]; then
   sleep 5
 
   # Fourth, VPLEX Simulator
-  wget 'https://coprhd.atlassian.net/wiki/download/attachments/6652057/vplex-sim.zip?version=4&modificationDate=1453406325096&api=v2' -O /simulator/vplex.zip
+  wget 'https://build.coprhd.org/jenkins/userContent/simulators/vplex-sim/1.0.0.0.56/vplex-simulators-1.0.0.0.56-bin.zip' -O /simulator/vplex.zip
   cd /simulator
   unzip vplex.zip
-  cd vplex-simulators-1.0.0.0.41/
+  cd vplex-simulators-1.0.0.0.56/
   # Edit IP Address for the SMIS provider and Vplex Simulator address (both CoprHD IP in this setup)
   sed -i "s/SMIProviderIP=10.247.98.128:5989,10.247.98.128:7009/SMIProviderIP=${coprhd_ip}:5989/" vplex_config.properties
   sed -i "s/#VplexSimulatorIP=10.247.98.128/VplexSimulatorIP=${coprhd_ip}/" vplex_config.properties
-  #sed -i 's/RP_ENABLE=true/RP_ENABLE=false/' vplex_config.properties
   chmod +x ./run.sh
   ./run.sh &
   # Need to wait for service to be running

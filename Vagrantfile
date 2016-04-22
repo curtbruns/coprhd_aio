@@ -43,7 +43,7 @@ ds_fixed_range   = "172.24.4.0/24"
 ds_vagrantbox = "ubuntu/trusty64"
 ds_vagrantbox_url = "https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/20160120.0.1/providers/virtualbox.box"
 # Allowed values for ds_release: kilo or liberty
-ds_release = "kilo"
+ds_release = "liberty"
 
 ########################################################
 #
@@ -290,6 +290,7 @@ Vagrant.configure("2") do |config|
      end
 
       # Setup ntpdate crontab
+      coprhd.vm.provision "shell", inline: "service sshd restart", run: "always"
       coprhd.vm.provision "shell" do |s|
         s.path = "scripts/crontab.sh"
         s.privileged = false
@@ -313,6 +314,7 @@ Vagrant.configure("2") do |config|
      end
 
      coprhd.vm.provision "shell", inline: "service network restart", run: "always"
+     coprhd.vm.provision "shell", inline: "service sshd restart", run: "always"
 
   end
 end

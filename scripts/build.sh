@@ -62,7 +62,6 @@ if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installRepositories
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installPackages
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installNginx
-  zypper --non-interactive --no-gpg-checks install --details --no-recommends --force-resolution java-1_8_0-openjdk java-1_8_0-openjdk-devel
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installJava 8
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installStorageOS
   bash coprhd-controller/packaging/appliance-images/openSUSE/13.2/CoprHDDevKit/configure.sh installNetworkConfigurationFile
@@ -80,6 +79,9 @@ network_vip=$VIP
 node_count=$COUNT
 node_id=$ID
 EOF
+  # Revert systemd for working version
+  echo "Reverting Systemd to working version"
+  zypper -n install --oldpackage systemd-210-25.5.4.x86_64 systemd-sysvinit-210-25.5.4.x86_64 systemd-210-25.5.4.x86_64 systemd-bash-completion-210-25.5.4.noarch
   cd coprhd-controller
   make clobber BUILD_TYPE=oss rpm
   rm -f /vagrant/storageos*.rpm

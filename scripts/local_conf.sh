@@ -73,5 +73,9 @@ SWIFT_BRANCH=2.3.0
 SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
 SWIFT_REPLICAS=1
 SWIFT_DATA_DIR=\$DEST/data
+
+[[post-config|\$CINDER_CONF]]
+[lvmdriver-1]
+iscsi_ip_address = $IP
 EOF
 
