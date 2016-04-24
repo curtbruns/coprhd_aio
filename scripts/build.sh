@@ -79,11 +79,13 @@ network_vip=$VIP
 node_count=$COUNT
 node_id=$ID
 EOF
-  # Revert systemd for working version
+  # Revert systemd for working version before install
   echo "Reverting Systemd to working version"
   mkdir -p /tmp/pkg-cache
   chmod 755 /tmp/pkg-cache
   zypper --cache-dir /tmp/pkg-cache -n install  --oldpackage systemd-210-25.5.4.x86_64 systemd-sysvinit-210-25.5.4.x86_64 systemd-210-25.5.4.x86_64 systemd-bash-completion-210-25.5.4.noarch
+  # Update Cron and Cronie before install
+  zypper --cache-dir /tmp/pkg-cache -n install cron-4.2-56.8.1.x86_64 cronie-1.4.12-56.8.1.x86_64
   cd coprhd-controller
   make clobber BUILD_TYPE=oss rpm
   rm -f /vagrant/storageos*.rpm

@@ -17,6 +17,7 @@ do
 done
 
 # install CoprHD
+echo "Installing CoprHD RPM"
 rpm -U /vagrant/storageos-*.x86_64.rpm
 
 #CoprHD Version
