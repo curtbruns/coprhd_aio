@@ -42,7 +42,7 @@ ds_floating_range   = "#{network}.224/28"
 ds_fixed_range   = "172.24.4.0/24"
 ds_vagrantbox = "ubuntu/trusty64"
 ds_vagrantbox_url = "https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/20160120.0.1/providers/virtualbox.box"
-# Allowed values for ds_release: kilo or liberty
+# Allowed values for ds_release: kilo | liberty | mitaka
 ds_release = "liberty"
 
 ########################################################
@@ -224,8 +224,8 @@ Vagrant.configure("2") do |config|
      end
 
      # Update Ubuntu and Install Pre-reqs
-    if !(ds_release.eql? "kilo" or ds_release.eql? "liberty")
-        print "Choose kilo or liberty for ds_release in Vagrantfile\n"
+    if !(ds_release.eql? "kilo" or ds_release.eql? "liberty" or ds_release.eql? "mitaka")
+        print "Choose kilo, liberty, or mitaka for ds_release in Vagrantfile\n"
         exit
     end
      devstack.vm.provision "shell" do |s|
@@ -290,7 +290,7 @@ Vagrant.configure("2") do |config|
      end
 
       # Setup ntpdate crontab
-      coprhd.vm.provision "shell", inline: "service sshd restart", run: "always"
+      coprhd.vm.provision "shell", inline: "zypper -n install cron"
       coprhd.vm.provision "shell" do |s|
         s.path = "scripts/crontab.sh"
         s.privileged = false
