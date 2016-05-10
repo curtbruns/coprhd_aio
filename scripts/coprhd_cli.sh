@@ -55,7 +55,7 @@ cd /opt/storageos/cli/bin
 patch -p3 < /home/vagrant/patch_auth.txt
 
 # Make sure git and pip are installed
-zypper -n install git python-pip python-openstackclient python-pexpect python-cjson
+zypper --cache-dir /tmp/pkg-cache -n install git python-pip python-openstackclient python-pexpect python-cjson
 
 # Change storageos password to 'vagrant'
 chmod 600 /etc/shadow
