@@ -52,6 +52,7 @@ done
 
 if [[ -n "${http_proxy_setting}" || -n "${https_proxy_setting}" ]]; then
     export JAVA_TOOL_OPTIONS="-Dhttp.proxyHost=${http_proxy_setting} -Dhttp.proxyPort=${http_proxy_port} -Dhttps.proxyHost=${https_proxy_setting} -Dhttps.proxyPort=${https_proxy_port}"
+    echo JAVA_TOOL_OPTIONS=\""-Dhttp.proxyHost=${http_proxy_setting} -Dhttp.proxyPort=${http_proxy_port} -Dhttps.proxyHost=${https_proxy_setting} -Dhttps.proxyPort=${https_proxy_port}\"" >> /etc/environment
 fi
 
 if [ "$build" = true ] || [ ! -e /vagrant/*.rpm ]; then
